@@ -11,7 +11,7 @@ export enum CopilotMode {
   export type ToolDefinition = {
     name: string;
     description: string;
-    parameters: {
+    parameters?: {
       type: 'object';
       properties: Record<string, ToolParameter>;
       required?: string[];

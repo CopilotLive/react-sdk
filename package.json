@@ -1,15 +1,35 @@
 {
   "name": "zion",
   "version": "1.0.0",
-  "main": "index.js",
-  "repository": "git@ssh.dev.azure.com:v3/GoFynd/CoPilot/zion",
-  "author": "Raj Jadon <rajjadon@gofynd.com>",
+  "main": "dist/index.cjs.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.cjs.js"
+    }
+  },
+  "peerDependencies": {
+    "react-dom": ">=17.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit"
+  },
   "license": "MIT",
   "dependencies": {
-    "@rollup/plugin-node-resolve": "^16.0.1",
+    "tslib": "^2.8.1"
+  },
+  "devDependencies": {
     "@rollup/plugin-typescript": "^12.1.2",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "rollup": "^4.41.0"
+    "@types/react": "^19.1.5",
+    "rollup": "^4.41.0",
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript": "^5.8.3"
   }
 }

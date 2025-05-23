@@ -4,23 +4,23 @@ import type { ToolDefinition } from '../types/CopilotTypes';
 
 type Props = {
   tools?: ToolDefinition | ToolDefinition[];
-  instanceId?: string;
+  botName?: string;
 };
 
-export const Copilot = ({ tools, instanceId = 'default' }: Props) => {
+export const Copilot = ({ tools, botName = 'default' }: Props) => {
   useEffect(() => {
-    const copilot = copilotInstances.get(instanceId);
-
+    const copilot = copilotInstances.get(botName);
+    console.log(copilot);
     if (!copilot || !tools) return;
 
     if (typeof copilot.tools?.add === 'function') {
       copilot.tools.add(tools);
       const count = Array.isArray(tools) ? tools.length : 1;
-      console.log(`[Copilot:${instanceId}] Registered ${count} tool(s)`);
+      console.log(`[Copilot:${botName}] Registered ${count} tool(s)`);
     } else {
-      console.warn(`[Copilot:${instanceId}] tools.add() not available yet`);
+      console.warn(`[Copilot:${botName}] tools.add() not available yet`);
     }
-  }, [tools, instanceId]);
+  }, [tools, botName]);
 
   return null;
 };

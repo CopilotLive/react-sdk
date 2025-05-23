@@ -11,9 +11,14 @@ export const Copilot = ({ tools, instanceId = 'default' }: Props) => {
   useEffect(() => {
     const copilot = copilotInstances.get(instanceId);
 
-    if (copilot && tools && copilot?.tools?.add) {
+    if (!copilot || !tools) return;
+
+    if (typeof copilot.tools?.add === 'function') {
       copilot.tools.add(tools);
-      console.log(`[Copilot:${instanceId}] Registered tool(s)`);
+      const count = Array.isArray(tools) ? tools.length : 1;
+      console.log(`[Copilot:${instanceId}] Registered ${count} tool(s)`);
+    } else {
+      console.warn(`[Copilot:${instanceId}] tools.add() not available yet`);
     }
   }, [tools, instanceId]);
 

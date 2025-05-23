@@ -1,6 +1,7 @@
 import type { CopilotAPI } from '../types/CopilotTypes';
 
 export const waitForCopilot = (
+  botName: string,
   timeout = 5000,
   interval = 100
 ): Promise<CopilotAPI | null> => {
@@ -11,7 +12,7 @@ export const waitForCopilot = (
     const maxTries = Math.ceil(timeout / interval);
 
     const check = () => {
-      const copilot = (window as any).Copilot as CopilotAPI;
+      const copilot = (window as any)[botName];
       if (copilot) {
         resolve(copilot);
       } else if (++tries >= maxTries) {

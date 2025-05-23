@@ -10,7 +10,7 @@ type Props = {
 export const Copilot = ({ tools, botName = 'default' }: Props) => {
   useEffect(() => {
     const copilot = copilotInstances.get(botName);
-    console.log(copilot);
+    console.log("Copilot Calls",copilot);
     if (!copilot || !tools) return;
 
     if (typeof copilot.tools?.add === 'function') {

@@ -1,5 +1,5 @@
 {
-  "name": "zion",
+  "name": "react-copilot-widget",
   "version": "1.0.0",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",

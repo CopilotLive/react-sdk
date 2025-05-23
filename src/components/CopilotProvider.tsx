@@ -29,6 +29,7 @@ type MultiInstanceProps = {
 type Props = SingleInstanceProps | MultiInstanceProps;
 
 const injectCopilotScript = (
+  mode: CopilotMode,
   token: string,
   config: Record<string, any> = {},
   scriptUrl?: string,
@@ -60,9 +61,7 @@ const injectCopilotScript = (
 
   waitForCopilot(botName).then((copilot) => {
     if (copilot) {
-      copilotInstances.set(botName, copilot);
-      console.log(JSON.stringify(copilot));
-      console.log(JSON.stringify(botName));
+      copilotInstances.set(mode === CopilotMode.MULTI ? botName : 'default', copilot);
     }
   });
 
@@ -75,10 +74,10 @@ export const CopilotProvider = (props: Props) => {
   useEffect(() => {
     if (mode === CopilotMode.MULTI && 'instances' in props) {
       props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'Copilot' }) => {
-        injectCopilotScript(token, config, scriptUrl, botName);
+        injectCopilotScript(mode,token, config, scriptUrl, botName);
       });
     } else if ('token' in props) {
-      injectCopilotScript(props.token, props.config, props.scriptUrl, props.botName);
+      injectCopilotScript(mode,props.token, props.config, props.scriptUrl, props.botName);
     }
   }, [props]);
 

@@ -10,7 +10,6 @@ type Props = {
 export const Copilot = ({ tools, botName = 'default' }: Props) => {
   useEffect(() => {
     const copilot = copilotInstances.get(botName);
-    console.log("Copilot Calls",copilot);
     if (!copilot || !tools) return;
 
     if (typeof copilot.tools?.add === 'function') {
@@ -20,7 +19,7 @@ export const Copilot = ({ tools, botName = 'default' }: Props) => {
     } else {
       console.warn(`[Copilot:${botName}] tools.add() not available yet`);
     }
-  }, [tools, botName]);
+  }, [tools || botName]);
 
   return null;
 };

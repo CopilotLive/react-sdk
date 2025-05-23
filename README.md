@@ -114,17 +114,20 @@ copilot?.tools?.removeAll();
 copilot?.users?.set({ id: 'user1', name: 'John Doe' });
 copilot?.users?.unset();
 ```
-### API Reference
+## API Reference
 
-```
+
 ### CopilotProvider Props
+```
 - mode : 'single' | 'multi' - Operation mode for Copilot instances
 - token : string - Copilot API token (for single mode)
 - config : object - Configuration options (for single mode)
 - scriptUrl : string - Custom script URL (optional)
 - botName : string - Custom instance name (optional)
 - instances : array - Array of instance configurations (for multi mode)
+```
 ### Copilot Component Props
+```
 - tools : ToolDefinition | ToolDefinition[] - Custom tools to register
 - botName : string - Target Copilot instance name
 ```

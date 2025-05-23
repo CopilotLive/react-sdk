@@ -35,7 +35,7 @@ const injectCopilotScript = (
   scriptUrl?: string,
   botName: string = 'copilot'
 ) => {
-  const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `-${botName}`}`;
+  const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `.${botName}`}`;
   if (document.getElementById(scriptId)) return;
 
   const inlineScript = document.createElement('script');
@@ -55,7 +55,7 @@ const injectCopilotScript = (
     })(window,document,"script","${botName}");
 
     ${botName}("init", ${JSON.stringify(config)}, function () {
-      window._${botName}_ready = true;
+      window["_${botName}_ready"] = true;
     });
   `;
 

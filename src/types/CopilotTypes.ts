@@ -23,7 +23,6 @@ export enum CopilotMode {
   export type CopilotAPI = {
     show?: () => void;
     hide?: () => void;
-    toggle?: () => void;
     tools?: {
       add?: (tool: ToolDefinition | ToolDefinition[]) => void;
       remove?: (name: string) => void;
@@ -33,5 +32,4 @@ export enum CopilotMode {
       set?: (user: Record<string, any>) => void;
       unset?: () => void;
     };
-    init?: (config: Record<string, any>) => void;
   };

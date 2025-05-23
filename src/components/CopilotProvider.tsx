@@ -53,17 +53,20 @@ const injectCopilotScript = (
       fjs.parentNode.insertBefore(js,fjs);
     })(window,document,"script","${botName}");
 
-    ${botName}("init", ${JSON.stringify(config)});
+    ${botName}("init", ${JSON.stringify(config)}, function () {
+      window._${botName}_ready = true;
+    });
   `;
-
-  document.body.appendChild(inlineScript);
 
   waitForCopilot(botName).then((copilot) => {
     if (copilot) {
       copilotInstances.set(botName, copilot);
-      console.log(`[${botName}:${botName === 'copilot' ? 'default' : botName}] registered`);
+      console.log(JSON.stringify(copilot));
+      console.log(JSON.stringify(botName));
     }
   });
+
+  document.body.appendChild(inlineScript);
 };
 
 export const CopilotProvider = (props: Props) => {

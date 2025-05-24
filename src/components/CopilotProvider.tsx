@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { waitForCopilot } from '../core/waitForCopilot';
 import { copilotInstances } from '../core/CopilotInstanceManager';
 import { CopilotMode } from '../types/CopilotTypes';
+import { SafeBotName } from '../types/SafeBotName';
 
 type SharedProps = {
   mode?: CopilotMode;
@@ -13,7 +14,7 @@ type SingleInstanceProps = {
   token: string;
   config?: Record<string, any>;
   scriptUrl?: string;
-  botName?: string;
+  botName?: SafeBotName<string>;
 } & SharedProps & { mode?: CopilotMode.SINGLE };
 
 // MULTI MODE
@@ -22,7 +23,7 @@ type MultiInstanceProps = {
     token: string;
     config?: Record<string, any>;
     scriptUrl?: string;
-    botName?: string;
+    botName?: SafeBotName<string>;
   }[];
 } & SharedProps & { mode: CopilotMode.MULTI };
 

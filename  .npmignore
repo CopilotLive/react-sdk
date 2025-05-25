@@ -1,0 +1,26 @@
+# Ignore config and dev-only files
+*.log
+*.tsbuildinfo
+*.env*
+.vscode/
+.idea/
+coverage/
+node_modules/
+
+# Ignore source files and tests (only dist is published)
+src/
+test/
+__tests__/
+__mocks__/
+*.spec.ts
+*.test.ts
+*.spec.tsx
+*.test.tsx
+
+# Ignore local build and tooling files
+rollup.config.js
+tsconfig.json
+.eslintrc*
+.prettierrc*
+jest.config.*
+babel.config.*

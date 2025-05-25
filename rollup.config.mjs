@@ -5,15 +5,31 @@ export default [
   {
     input: 'src/index.ts',
     output: [
-      { file: 'dist/index.esm.js', format: 'esm' },
-      { file: 'dist/index.cjs.js', format: 'cjs' }
+      {
+        file: 'dist/index.esm.js',
+        format: 'esm',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/index.cjs.js',
+        format: 'cjs',
+        sourcemap: true,
+      },
     ],
-    external: ['react', 'react-dom'],
-    plugins: [typescript({ tsconfig: './tsconfig.json' })]
+    external: ['react', 'react-dom', 'react/jsx-runtime'],
+    plugins: [
+      typescript({
+        tsconfig: './tsconfig.json',
+      }),
+    ],
   },
   {
     input: 'src/index.ts',
-    output: { file: 'dist/index.d.ts', format: 'es' },
-    plugins: [dts()]
-  }
+    output: {
+      file: 'dist/index.d.ts',
+      format: 'es',
+    },
+    external: ['react', 'react-dom', 'react/jsx-runtime'],
+    plugins: [dts()],
+  },
 ];

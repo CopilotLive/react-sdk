@@ -1,25 +1,26 @@
-import React, { useEffect } from 'react';
-import { copilotInstances } from '../core/CopilotInstanceManager';
-import { defaultBotName, type ToolDefinition } from '../types/CopilotTypes';
+import { useEffect } from 'react';
+import { useCopilot } from '../core/hooks/useCopilot';
+import { type ToolDefinition } from '../types/CopilotTypes';
 
 type Props = {
   tools?: ToolDefinition | ToolDefinition[];
-  botName?: string;
+  botName?: string | number; // optional index or string
 };
 
-export const Copilot = ({ tools, botName = defaultBotName }: Props) => {
+export const Copilot = ({ tools, botName }: Props) => {
+  const copilot = useCopilot(botName);
+
   useEffect(() => {
-    const copilot = copilotInstances.get(botName);
     if (!copilot || !tools) return;
 
     if (typeof copilot.tools?.add === 'function') {
       copilot.tools.add(tools);
       const count = Array.isArray(tools) ? tools.length : 1;
-      console.log(`[Copilot:${botName}] Registered ${count} tool(s)`);
+      console.log(`[Copilot] Registered ${count} tool(s)`);
     } else {
-      console.warn(`[Copilot:${botName}] tools.add() not available yet`);
+      console.warn(`[Copilot] tools.add() not available`);
     }
-  }, [tools || botName]);
+  }, [copilot, tools]);
 
   return null;
 };

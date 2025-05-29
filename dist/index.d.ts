@@ -47,7 +47,7 @@ type CopilotAPI = {
 
 type Props = {
     tools?: ToolDefinition | ToolDefinition[];
-    botName?: string;
+    botName?: string | number;
 };
 declare const Copilot: ({ tools, botName }: Props) => null;
 

@@ -102,23 +102,6 @@ const CopilotProvider = (props) => {
     return jsx(Fragment, { children: props.children });
 };
 
-const Copilot = ({ tools, botName = defaultBotName }) => {
-    useEffect(() => {
-        const copilot = copilotInstances.get(botName);
-        if (!copilot || !tools)
-            return;
-        if (typeof copilot.tools?.add === 'function') {
-            copilot.tools.add(tools);
-            const count = Array.isArray(tools) ? tools.length : 1;
-            console.log(`[Copilot:${botName}] Registered ${count} tool(s)`);
-        }
-        else {
-            console.warn(`[Copilot:${botName}] tools.add() not available yet`);
-        }
-    }, [tools || botName]);
-    return null;
-};
-
 const MAX_WAIT_TIME = 5000; // 5 seconds timeout
 const useCopilot = (idOrIndex) => {
     const [copilot, setCopilot] = useState();
@@ -158,6 +141,23 @@ const useCopilot = (idOrIndex) => {
         }
     }, [hasErrored, idOrIndex]);
     return copilot;
+};
+
+const Copilot = ({ tools, botName }) => {
+    const copilot = useCopilot(botName);
+    useEffect(() => {
+        if (!copilot || !tools)
+            return;
+        if (typeof copilot.tools?.add === 'function') {
+            copilot.tools.add(tools);
+            const count = Array.isArray(tools) ? tools.length : 1;
+            console.log(`[Copilot] Registered ${count} tool(s)`);
+        }
+        else {
+            console.warn(`[Copilot] tools.add() not available`);
+        }
+    }, [copilot, tools]);
+    return null;
 };
 
 const useCopilotTools = (idOrIndex) => {

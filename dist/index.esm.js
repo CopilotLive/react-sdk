@@ -83,7 +83,7 @@ const injectCopilotScript = (mode, token, config = {}, scriptUrl, botName = 'cop
     document.body.appendChild(inlineScript);
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
-            copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'default', copilot);
+            copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'copilot1', copilot);
         }
     });
 };
@@ -91,8 +91,8 @@ const CopilotProvider = (props) => {
     const mode = props.mode ?? CopilotMode.SINGLE;
     useEffect(() => {
         if (mode === CopilotMode.MULTI && 'instances' in props) {
-            props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }) => {
-                injectCopilotScript(mode, token, config, scriptUrl, botName);
+            props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }, index) => {
+                injectCopilotScript(mode, token, config, scriptUrl, `${botName}${index + 1}`);
             });
         }
         else if ('token' in props) {
@@ -102,7 +102,7 @@ const CopilotProvider = (props) => {
     return jsx(Fragment, { children: props.children });
 };
 
-const Copilot = ({ tools, botName = 'default' }) => {
+const Copilot = ({ tools, botName = 'copilot1' }) => {
     useEffect(() => {
         const copilot = copilotInstances.get(botName);
         if (!copilot || !tools)
@@ -119,7 +119,7 @@ const Copilot = ({ tools, botName = 'default' }) => {
     return null;
 };
 
-const useCopilot = (instanceId = 'default') => {
+const useCopilot = (instanceId = 'copilot1') => {
     return useMemo(() => {
         const copilot = copilotInstances.get(instanceId);
         if (!copilot) {

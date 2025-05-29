@@ -63,7 +63,7 @@ const injectCopilotScript = (
 
   waitForCopilot(safeBotName).then((copilot) => {
     if (copilot) {
-      copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'default', copilot);
+      copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'copilot1', copilot);
     }
   });
 };
@@ -73,8 +73,8 @@ export const CopilotProvider = (props: Props) => {
 
   useEffect(() => {
     if (mode === CopilotMode.MULTI && 'instances' in props) {
-      props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }) => {
-        injectCopilotScript(mode, token, config, scriptUrl, botName);
+      props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }, index) => {
+        injectCopilotScript(mode, token, config, scriptUrl, `${botName}${index + 1}`);
       });
     } else if ('token' in props) {
       injectCopilotScript(mode, props.token, props.config, props.scriptUrl, props.botName);

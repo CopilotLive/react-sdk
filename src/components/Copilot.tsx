@@ -7,7 +7,7 @@ type Props = {
   botName?: string;
 };
 
-export const Copilot = ({ tools, botName = 'default' }: Props) => {
+export const Copilot = ({ tools, botName = 'copilot1' }: Props) => {
   useEffect(() => {
     const copilot = copilotInstances.get(botName);
     if (!copilot || !tools) return;

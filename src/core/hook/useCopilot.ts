@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { copilotInstances } from '../CopilotInstanceManager';
 import type { CopilotAPI } from '../../types/CopilotTypes';
 
-export const useCopilot = (instanceId: string = 'default'): CopilotAPI | undefined => {
+export const useCopilot = (instanceId: string = 'copilot1'): CopilotAPI | undefined => {
   return useMemo(() => {
     const copilot = copilotInstances.get(instanceId);
     if (!copilot) {

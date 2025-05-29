@@ -1,34 +1,29 @@
+// Updated CopilotProvider with automatic mode detection
 import React, { useEffect } from 'react';
 import { waitForCopilot } from '../core/waitForCopilot';
 import { copilotInstances } from '../core/CopilotInstanceManager';
-import { CopilotMode } from '../types/CopilotTypes';
 import { validateBotName } from '../utills/validateBotName';
+import type { CopilotAPI } from '../types/CopilotTypes';
 
-type SharedProps = {
-  mode?: CopilotMode;
+interface SharedProps {
   children: React.ReactNode;
-};
+}
 
-type SingleInstanceProps = {
+interface SingleInstance {
   token: string;
   config?: Record<string, any>;
   scriptUrl?: string;
   botName?: string;
-} & SharedProps & { mode?: CopilotMode.SINGLE };
+}
 
-type MultiInstanceProps = {
-  instances: {
-    token: string;
-    config?: Record<string, any>;
-    scriptUrl?: string;
-    botName?: string;
-  }[];
-} & SharedProps & { mode: CopilotMode.MULTI };
+interface MultiInstance {
+  instances: SingleInstance[];
+}
 
-type Props = SingleInstanceProps | MultiInstanceProps;
+type CopilotProviderProps = (SingleInstance | MultiInstance) & SharedProps;
 
 const injectCopilotScript = (
-  mode: CopilotMode,
+  key: string,
   token: string,
   config: Record<string, any> = {},
   scriptUrl?: string,
@@ -61,23 +56,26 @@ const injectCopilotScript = (
 
   document.body.appendChild(inlineScript);
 
-  waitForCopilot(safeBotName).then((copilot) => {
+  waitForCopilot(safeBotName).then((copilot: CopilotAPI | null) => {
     if (copilot) {
-      copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'copilot1', copilot);
+      copilotInstances.set(key, copilot);
     }
   });
 };
 
-export const CopilotProvider = (props: Props) => {
-  const mode = props.mode ?? CopilotMode.SINGLE;
-
+export const CopilotProvider = (props: CopilotProviderProps) => {
   useEffect(() => {
-    if (mode === CopilotMode.MULTI && 'instances' in props) {
+    // MULTI mode
+    if ('instances' in props && Array.isArray(props.instances)) {
       props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }, index) => {
-        injectCopilotScript(mode, token, config, scriptUrl, `${botName}${index + 1}`);
+        const instanceKey = `${botName}${index + 1}`;
+        injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
       });
-    } else if ('token' in props) {
-      injectCopilotScript(mode, props.token, props.config, props.scriptUrl, props.botName);
+    }
+    // SINGLE mode
+    else if ('token' in props) {
+      const { token, config = {}, scriptUrl, botName = 'copilot' } = props;
+      injectCopilotScript('default', token, config, scriptUrl, botName);
     }
   }, [props]);
 

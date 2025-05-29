@@ -41,12 +41,6 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
 
 const copilotInstances = new Map();
 
-var CopilotMode;
-(function (CopilotMode) {
-    CopilotMode["SINGLE"] = "single";
-    CopilotMode["MULTI"] = "multi";
-})(CopilotMode || (CopilotMode = {}));
-
 const validateBotName = (botName) => {
     const isValid = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(botName);
     if (!isValid) {
@@ -55,7 +49,7 @@ const validateBotName = (botName) => {
     return botName;
 };
 
-const injectCopilotScript = (mode, token, config = {}, scriptUrl, botName = 'copilot') => {
+const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copilot') => {
     const safeBotName = validateBotName(botName);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
     if (document.getElementById(scriptId))
@@ -83,20 +77,23 @@ const injectCopilotScript = (mode, token, config = {}, scriptUrl, botName = 'cop
     document.body.appendChild(inlineScript);
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
-            copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'copilot1', copilot);
+            copilotInstances.set(key, copilot);
         }
     });
 };
 const CopilotProvider = (props) => {
-    const mode = props.mode ?? CopilotMode.SINGLE;
     useEffect(() => {
-        if (mode === CopilotMode.MULTI && 'instances' in props) {
+        // MULTI mode
+        if ('instances' in props && Array.isArray(props.instances)) {
             props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }, index) => {
-                injectCopilotScript(mode, token, config, scriptUrl, `${botName}${index + 1}`);
+                const instanceKey = `${botName}${index + 1}`;
+                injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
             });
         }
+        // SINGLE mode
         else if ('token' in props) {
-            injectCopilotScript(mode, props.token, props.config, props.scriptUrl, props.botName);
+            const { token, config = {}, scriptUrl, botName = 'copilot' } = props;
+            injectCopilotScript('default', token, config, scriptUrl, botName);
         }
     }, [props]);
     return jsx(Fragment, { children: props.children });
@@ -130,5 +127,5 @@ const useCopilot = (instanceId = 'copilot1') => {
     }, [instanceId]);
 };
 
-export { Copilot, CopilotMode, CopilotProvider, useCopilot };
+export { Copilot, CopilotProvider, useCopilot };
 //# sourceMappingURL=index.esm.js.map

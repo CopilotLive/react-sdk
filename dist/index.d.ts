@@ -1,10 +1,21 @@
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React from 'react';
 
-declare enum CopilotMode {
-    SINGLE = "single",
-    MULTI = "multi"
+interface SharedProps {
+    children: React.ReactNode;
 }
+interface SingleInstance {
+    token: string;
+    config?: Record<string, any>;
+    scriptUrl?: string;
+    botName?: string;
+}
+interface MultiInstance {
+    instances: SingleInstance[];
+}
+type CopilotProviderProps = (SingleInstance | MultiInstance) & SharedProps;
+declare const CopilotProvider: (props: CopilotProviderProps) => react_jsx_runtime.JSX.Element;
+
 type ToolParameter = {
     type: string;
     description?: string;
@@ -34,31 +45,6 @@ type CopilotAPI = {
     };
 };
 
-type SharedProps = {
-    mode?: CopilotMode;
-    children: React.ReactNode;
-};
-type SingleInstanceProps = {
-    token: string;
-    config?: Record<string, any>;
-    scriptUrl?: string;
-    botName?: string;
-} & SharedProps & {
-    mode?: CopilotMode.SINGLE;
-};
-type MultiInstanceProps = {
-    instances: {
-        token: string;
-        config?: Record<string, any>;
-        scriptUrl?: string;
-        botName?: string;
-    }[];
-} & SharedProps & {
-    mode: CopilotMode.MULTI;
-};
-type Props$1 = SingleInstanceProps | MultiInstanceProps;
-declare const CopilotProvider: (props: Props$1) => react_jsx_runtime.JSX.Element;
-
 type Props = {
     tools?: ToolDefinition | ToolDefinition[];
     botName?: string;
@@ -72,5 +58,5 @@ type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? F
 
 declare const useCopilot: (instanceId?: string) => CopilotAPI | undefined;
 
-export { Copilot, CopilotMode, CopilotProvider, useCopilot };
+export { Copilot, CopilotProvider, useCopilot };
 export type { CopilotAPI, SafeBotName, ToolDefinition };

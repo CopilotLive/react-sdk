@@ -1,7 +1,3 @@
-export declare enum CopilotMode {
-    SINGLE = "single",
-    MULTI = "multi"
-}
 export type ToolParameter = {
     type: string;
     description?: string;

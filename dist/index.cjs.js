@@ -156,7 +156,7 @@ const useCopilot = (idOrIndex) => {
     }, [idOrIndex]);
     react.useEffect(() => {
         if (hasErrored) {
-            console.error(`[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found after`);
+            console.error(`[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found`);
         }
     }, [hasErrored, idOrIndex]);
     return copilot;

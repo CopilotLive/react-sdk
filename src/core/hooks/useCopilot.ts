@@ -45,7 +45,7 @@ export const useCopilot = (idOrIndex?: string | number) => {
   useEffect(() => {
     if (hasErrored) {
       console.error(
-        `[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found after`
+        `[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found`
       );
     }
   }, [hasErrored, idOrIndex]);

@@ -279,6 +279,4 @@ The README has been updated with comprehensive documentation that includes:
 ✅ Professional Formatting** with clear sections and organization
 ✅ Real-world Examples** showing practical implementations
 ✅ Hook Documentation** for `useCopilot`, `useCopilotTools`, and `useCopilotUser`
-
-You can now save this content to your README.md file.
 ```

@@ -53,8 +53,8 @@ const validateBotName = (botName) => {
 
 const defaultBotName = 'copilot';
 
-const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copilot') => {
-    const safeBotName = validateBotName(botName);
+const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
+    const safeBotName = validateBotName(key);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
     if (document.getElementById(scriptId))
         return;
@@ -92,13 +92,13 @@ const CopilotProvider = (props) => {
         if ('instances' in props && Array.isArray(props.instances)) {
             props.instances.forEach(({ token, config = {}, scriptUrl, botName }, index) => {
                 const instanceKey = botName || `${defaultBotName}${index}`;
-                injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
+                injectCopilotScript(instanceKey, token, config, scriptUrl);
             });
         }
         // SINGLE mode
         else if ('token' in props) {
             const { token, config = {}, scriptUrl, botName } = props;
-            injectCopilotScript(botName || defaultBotName, token, config, scriptUrl, botName);
+            injectCopilotScript(botName || defaultBotName, token, config, scriptUrl);
         }
     }, [props]);
     return jsxRuntime.jsx(jsxRuntime.Fragment, { children: props.children });

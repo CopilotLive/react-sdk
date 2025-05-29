@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
 import { copilotInstances } from '../core/CopilotInstanceManager';
-import type { ToolDefinition } from '../types/CopilotTypes';
+import { defaultBotName, type ToolDefinition } from '../types/CopilotTypes';
 
 type Props = {
   tools?: ToolDefinition | ToolDefinition[];
   botName?: string;
 };
 
-export const Copilot = ({ tools, botName = 'copilot1' }: Props) => {
+export const Copilot = ({ tools, botName = defaultBotName }: Props) => {
   useEffect(() => {
     const copilot = copilotInstances.get(botName);
     if (!copilot || !tools) return;

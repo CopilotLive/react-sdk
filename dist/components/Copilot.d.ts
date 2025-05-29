@@ -1,4 +1,4 @@
-import type { ToolDefinition } from '../types/CopilotTypes';
+import { type ToolDefinition } from '../types/CopilotTypes';
 type Props = {
     tools?: ToolDefinition | ToolDefinition[];
     botName?: string;

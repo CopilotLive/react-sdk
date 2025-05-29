@@ -1,3 +1,4 @@
+   export const defaultBotName = 'copilot'; 
    export type ToolParameter = {
     type: string;
     description?: string;

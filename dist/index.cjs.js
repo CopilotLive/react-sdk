@@ -51,6 +51,8 @@ const validateBotName = (botName) => {
     return botName;
 };
 
+const defaultBotName = 'copilot';
+
 const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copilot') => {
     const safeBotName = validateBotName(botName);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
@@ -87,21 +89,21 @@ const CopilotProvider = (props) => {
     react.useEffect(() => {
         // MULTI mode
         if ('instances' in props && Array.isArray(props.instances)) {
-            props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }, index) => {
+            props.instances.forEach(({ token, config = {}, scriptUrl, botName = defaultBotName }, index) => {
                 const instanceKey = `${botName}${index + 1}`;
                 injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
             });
         }
         // SINGLE mode
         else if ('token' in props) {
-            const { token, config = {}, scriptUrl, botName = 'copilot' } = props;
-            injectCopilotScript('default', token, config, scriptUrl, botName);
+            const { token, config = {}, scriptUrl, botName = defaultBotName } = props;
+            injectCopilotScript(defaultBotName, token, config, scriptUrl, botName);
         }
     }, [props]);
     return jsxRuntime.jsx(jsxRuntime.Fragment, { children: props.children });
 };
 
-const Copilot = ({ tools, botName = 'copilot1' }) => {
+const Copilot = ({ tools, botName = defaultBotName }) => {
     react.useEffect(() => {
         const copilot = copilotInstances.get(botName);
         if (!copilot || !tools)
@@ -118,7 +120,7 @@ const Copilot = ({ tools, botName = 'copilot1' }) => {
     return null;
 };
 
-const useCopilot = (instanceId = 'copilot1') => {
+const useCopilot = (instanceId = defaultBotName) => {
     return react.useMemo(() => {
         const copilot = copilotInstances.get(instanceId);
         if (!copilot) {
@@ -129,12 +131,12 @@ const useCopilot = (instanceId = 'copilot1') => {
     }, [instanceId]);
 };
 
-const useCopilotTools = (instanceId = 'copilot1') => {
+const useCopilotTools = (instanceId = defaultBotName) => {
     const copilot = useCopilot(instanceId);
     return copilot?.tools;
 };
 
-const useCopilotUser = (instanceId = 'copilot1') => {
+const useCopilotUser = (instanceId = defaultBotName) => {
     const copilot = useCopilot(instanceId);
     return copilot?.users;
 };

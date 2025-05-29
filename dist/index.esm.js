@@ -89,8 +89,10 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copi
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
-            notifyCopilotSubscribers();
             console.log(`[CopilotProvider] Registered: ${key}`);
+            setTimeout(() => {
+                notifyCopilotSubscribers();
+            }, 0);
         }
     });
 };

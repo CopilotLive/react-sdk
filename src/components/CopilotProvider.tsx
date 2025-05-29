@@ -62,8 +62,10 @@ const injectCopilotScript = (
     if (copilot) {
       copilotInstances.set(key, copilot);
       registeredCopilotNames.push(key);
-      notifyCopilotSubscribers();
       console.log(`[CopilotProvider] Registered: ${key}`);
+      setTimeout(() => {
+        notifyCopilotSubscribers();
+      }, 0);
     }
   });
 };

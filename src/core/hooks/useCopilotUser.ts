@@ -1,7 +1,12 @@
-import { defaultBotName } from "../../types/CopilotTypes";
 import { useCopilot } from "./useCopilot";
 
-export const useCopilotUser = (idOrIndex: string | number = defaultBotName) => {
+export const useCopilotUser = (idOrIndex?: string | number) => {
   const copilot = useCopilot(idOrIndex);
-  return copilot?.users;
+
+  if (!copilot) {
+    console.warn('[useCopilotUser] Copilot instance not found.');
+    return undefined;
+  }
+
+  return copilot.users;
 };

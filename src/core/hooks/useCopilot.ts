@@ -1,19 +1,18 @@
 import { useSyncExternalStore } from 'react';
 import { copilotInstances, subscribeCopilotInstances } from '../CopilotInstanceManager';
-import { registeredCopilotNames } from '../../components/CopilotProvider';
 
 export const useCopilot = (idOrIndex?: string | number) => {
   return useSyncExternalStore(
     subscribeCopilotInstances,
     () => {
-      const registered = registeredCopilotNames;
+      const allKeys = Array.from(copilotInstances.keys());
 
       let key: string | undefined;
 
       if (idOrIndex === undefined) {
-        key = registered[0]; // default to index 0
+        key = allKeys[0]; // default to first instance
       } else if (typeof idOrIndex === 'number') {
-        key = registered[idOrIndex];
+        key = allKeys[idOrIndex];
         if (!key) {
           console.error(`[useCopilot] Invalid index: ${idOrIndex}`);
           return undefined;

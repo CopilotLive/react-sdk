@@ -60,7 +60,6 @@ const validateBotName = (botName) => {
 
 const defaultBotName = 'copilot';
 
-const registeredCopilotNames = [];
 const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copilot') => {
     const safeBotName = validateBotName(botName);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
@@ -90,7 +89,6 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copi
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
-            registeredCopilotNames.push(key);
             notifyCopilotSubscribers();
             console.log(`[CopilotProvider] Registered: ${key}`);
         }
@@ -133,13 +131,13 @@ const Copilot = ({ tools, botName = defaultBotName }) => {
 
 const useCopilot = (idOrIndex) => {
     return useSyncExternalStore(subscribeCopilotInstances, () => {
-        const registered = registeredCopilotNames;
+        const allKeys = Array.from(copilotInstances.keys());
         let key;
         if (idOrIndex === undefined) {
-            key = registered[0]; // default to index 0
+            key = allKeys[0]; // default to first instance
         }
         else if (typeof idOrIndex === 'number') {
-            key = registered[idOrIndex];
+            key = allKeys[idOrIndex];
             if (!key) {
                 console.error(`[useCopilot] Invalid index: ${idOrIndex}`);
                 return undefined;
@@ -156,14 +154,22 @@ const useCopilot = (idOrIndex) => {
     }, () => undefined);
 };
 
-const useCopilotTools = (idOrIndex = defaultBotName) => {
+const useCopilotTools = (idOrIndex) => {
     const copilot = useCopilot(idOrIndex);
-    return copilot?.tools;
+    if (!copilot) {
+        console.warn('[useCopilotTools] Copilot instance not found.');
+        return undefined;
+    }
+    return copilot.tools;
 };
 
-const useCopilotUser = (idOrIndex = defaultBotName) => {
+const useCopilotUser = (idOrIndex) => {
     const copilot = useCopilot(idOrIndex);
-    return copilot?.users;
+    if (!copilot) {
+        console.warn('[useCopilotUser] Copilot instance not found.');
+        return undefined;
+    }
+    return copilot.users;
 };
 
 export { Copilot, CopilotProvider, useCopilot, useCopilotTools, useCopilotUser };

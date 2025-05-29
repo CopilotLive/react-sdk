@@ -1,1 +1,2 @@
-export declare const useCopilot: (idOrIndex?: string | number) => any;
+import { CopilotAPI } from '../../types/CopilotTypes';
+export declare const useCopilot: (idOrIndex?: string | number) => CopilotAPI | undefined;

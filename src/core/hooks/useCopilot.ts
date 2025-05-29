@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { copilotInstances } from '../CopilotInstanceManager';
+import { CopilotAPI } from '../../types/CopilotTypes';
 
 const MAX_WAIT_TIME = 5000; // 5 seconds timeout
 
 export const useCopilot = (idOrIndex?: string | number) => {
-  const [copilot, setCopilot] = useState<any>();
+  const [copilot, setCopilot] = useState<CopilotAPI>();
   const [hasErrored, setHasErrored] = useState(false);
 
   useEffect(() => {

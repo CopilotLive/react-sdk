@@ -56,18 +56,11 @@ declare const Copilot: ({ tools, botName }: Props) => null;
  */
 type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? First extends Lowercase<First> | Uppercase<First> | '_' | '$' ? Rest extends `${string}` ? T extends `${string}-${string}` | `${string}.${string}` | `${string} ${string}` ? never : T : never : never : never;
 
-declare const useCopilot: (idOrIndex?: string | number) => CopilotAPI | undefined;
+declare const useCopilot: (idOrIndex?: string | number) => any;
 
-declare const useCopilotTools: (idOrIndex?: string | number) => {
-    add: (tool: ToolDefinition | ToolDefinition[]) => void;
-    remove: (name: string) => void;
-    removeAll?: () => void;
-} | undefined;
+declare const useCopilotTools: (idOrIndex?: string | number) => any;
 
-declare const useCopilotUser: (idOrIndex?: string | number) => {
-    set: (user: Record<string, any>) => void;
-    unset: () => void;
-} | undefined;
+declare const useCopilotUser: (idOrIndex?: string | number) => any;
 
 export { Copilot, CopilotProvider, useCopilot, useCopilotTools, useCopilotUser };
 export type { CopilotAPI, SafeBotName, ToolDefinition };

@@ -1,5 +1,4 @@
 import React from 'react';
-export declare const registeredCopilotNames: string[];
 interface SharedProps {
     children: React.ReactNode;
 }

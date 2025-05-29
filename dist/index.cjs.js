@@ -41,16 +41,7 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
     });
 };
 
-const subscribers = new Set();
 const copilotInstances = new Map();
-const subscribeCopilotInstances = (callback) => {
-    subscribers.add(callback);
-    return () => subscribers.delete(callback);
-};
-const notifyCopilotSubscribers = () => {
-    for (const cb of subscribers)
-        cb();
-};
 
 const validateBotName = (botName) => {
     const isValid = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(botName);
@@ -92,9 +83,6 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copi
         if (copilot) {
             copilotInstances.set(key, copilot);
             console.log(`[CopilotProvider] Registered: ${key}`);
-            setTimeout(() => {
-                notifyCopilotSubscribers();
-            }, 0);
         }
     });
 };
@@ -133,29 +121,45 @@ const Copilot = ({ tools, botName = defaultBotName }) => {
     return null;
 };
 
+const MAX_WAIT_TIME = 5000; // 5 seconds timeout
 const useCopilot = (idOrIndex) => {
-    return react.useSyncExternalStore(subscribeCopilotInstances, () => {
-        const allKeys = Array.from(copilotInstances.keys());
-        let key;
-        if (idOrIndex === undefined) {
-            key = allKeys[0]; // default to first instance
-        }
-        else if (typeof idOrIndex === 'number') {
-            key = allKeys[idOrIndex];
-            if (!key) {
-                console.error(`[useCopilot] Invalid index: ${idOrIndex}`);
-                return undefined;
+    const [copilot, setCopilot] = react.useState();
+    const [hasErrored, setHasErrored] = react.useState(false);
+    react.useEffect(() => {
+        const interval = 100;
+        const maxTries = MAX_WAIT_TIME / interval;
+        let tries = 0;
+        const id = setInterval(() => {
+            const keys = Array.from(copilotInstances.keys());
+            let key;
+            if (idOrIndex === undefined) {
+                key = keys[0];
             }
-        }
-        else {
-            key = idOrIndex;
-            if (!copilotInstances.has(key)) {
-                console.error(`[useCopilot] Invalid Copilot name: "${key}"`);
-                return undefined;
+            else if (typeof idOrIndex === 'number') {
+                key = keys[idOrIndex];
             }
+            else {
+                key = idOrIndex;
+            }
+            if (key && copilotInstances.has(key)) {
+                setCopilot(copilotInstances.get(key));
+                clearInterval(id);
+                return;
+            }
+            tries++;
+            if (tries >= maxTries) {
+                setHasErrored(true);
+                clearInterval(id);
+            }
+        }, interval);
+        return () => clearInterval(id);
+    }, [idOrIndex]);
+    react.useEffect(() => {
+        if (hasErrored) {
+            console.error(`[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found after`);
         }
-        return copilotInstances.get(key);
-    }, () => undefined);
+    }, [hasErrored, idOrIndex]);
+    return copilot;
 };
 
 const useCopilotTools = (idOrIndex) => {

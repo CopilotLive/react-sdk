@@ -1,7 +1,7 @@
 import { defaultBotName } from "../../types/CopilotTypes";
 import { useCopilot } from "./useCopilot";
 
-export const useCopilotTools = (instanceId: string = defaultBotName) => {
-    const copilot = useCopilot(instanceId);
-    return copilot?.tools;
-  };
+export const useCopilotTools = (idOrIndex: string | number = defaultBotName) => {
+  const copilot = useCopilot(idOrIndex);
+  return copilot?.tools;
+};

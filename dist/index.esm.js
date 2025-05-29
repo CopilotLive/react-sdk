@@ -51,6 +51,7 @@ const validateBotName = (botName) => {
 
 const defaultBotName = 'copilot';
 
+const registeredCopilotNames = [];
 const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copilot') => {
     const safeBotName = validateBotName(botName);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
@@ -80,6 +81,8 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copi
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
+            registeredCopilotNames.push(key);
+            console.log(`[CopilotProvider] Registered: ${key}`);
         }
     });
 };
@@ -118,24 +121,35 @@ const Copilot = ({ tools, botName = defaultBotName }) => {
     return null;
 };
 
-const useCopilot = (instanceId = defaultBotName) => {
+const useCopilot = (idOrIndex = defaultBotName) => {
     return useMemo(() => {
-        const copilot = copilotInstances.get(instanceId);
+        let key;
+        if (typeof idOrIndex === 'number') {
+            key = registeredCopilotNames[idOrIndex];
+            if (!key) {
+                console.warn(`[useCopilot] No Copilot registered at index ${idOrIndex}`);
+                return undefined;
+            }
+        }
+        else {
+            key = idOrIndex;
+        }
+        const copilot = copilotInstances.get(key);
         if (!copilot) {
-            console.warn(`[useCopilot] Copilot instance "${instanceId}" not found.`);
+            console.warn(`[useCopilot] Copilot instance "${key}" not found.`);
             return undefined;
         }
         return copilot;
-    }, [instanceId]);
+    }, [idOrIndex]);
 };
 
-const useCopilotTools = (instanceId = defaultBotName) => {
-    const copilot = useCopilot(instanceId);
+const useCopilotTools = (idOrIndex = defaultBotName) => {
+    const copilot = useCopilot(idOrIndex);
     return copilot?.tools;
 };
 
-const useCopilotUser = (instanceId = defaultBotName) => {
-    const copilot = useCopilot(instanceId);
+const useCopilotUser = (idOrIndex = defaultBotName) => {
+    const copilot = useCopilot(idOrIndex);
     return copilot?.users;
 };
 

@@ -5,6 +5,8 @@ import { copilotInstances } from '../core/CopilotInstanceManager';
 import { validateBotName } from '../utills/validateBotName';
 import { defaultBotName, type CopilotAPI } from '../types/CopilotTypes';
 
+export const registeredCopilotNames: string[] = [];
+
 interface SharedProps {
   children: React.ReactNode;
 }
@@ -59,6 +61,8 @@ const injectCopilotScript = (
   waitForCopilot(safeBotName).then((copilot: CopilotAPI | null) => {
     if (copilot) {
       copilotInstances.set(key, copilot);
+      registeredCopilotNames.push(key);
+      console.log(`[CopilotProvider] Registered: ${key}`);
     }
   });
 };

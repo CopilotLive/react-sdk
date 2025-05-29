@@ -1,5 +1,5 @@
 import { jsx, Fragment } from 'react/jsx-runtime';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 
 const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
     return new Promise((resolve) => {
@@ -39,7 +39,16 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
     });
 };
 
+const subscribers = new Set();
 const copilotInstances = new Map();
+const subscribeCopilotInstances = (callback) => {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+};
+const notifyCopilotSubscribers = () => {
+    for (const cb of subscribers)
+        cb();
+};
 
 const validateBotName = (botName) => {
     const isValid = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(botName);
@@ -82,6 +91,7 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl, botName = 'copi
         if (copilot) {
             copilotInstances.set(key, copilot);
             registeredCopilotNames.push(key);
+            notifyCopilotSubscribers();
             console.log(`[CopilotProvider] Registered: ${key}`);
         }
     });
@@ -91,7 +101,7 @@ const CopilotProvider = (props) => {
         // MULTI mode
         if ('instances' in props && Array.isArray(props.instances)) {
             props.instances.forEach(({ token, config = {}, scriptUrl, botName }, index) => {
-                const instanceKey = botName || `${defaultBotName}${index + 1}`;
+                const instanceKey = botName || `${defaultBotName}${index}`;
                 injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
             });
         }
@@ -121,26 +131,29 @@ const Copilot = ({ tools, botName = defaultBotName }) => {
     return null;
 };
 
-const useCopilot = (idOrIndex = defaultBotName) => {
-    return useMemo(() => {
+const useCopilot = (idOrIndex) => {
+    return useSyncExternalStore(subscribeCopilotInstances, () => {
+        const registered = registeredCopilotNames;
         let key;
-        if (typeof idOrIndex === 'number') {
-            key = registeredCopilotNames[idOrIndex];
+        if (idOrIndex === undefined) {
+            key = registered[0]; // default to index 0
+        }
+        else if (typeof idOrIndex === 'number') {
+            key = registered[idOrIndex];
             if (!key) {
-                console.warn(`[useCopilot] No Copilot registered at index ${idOrIndex}`);
+                console.error(`[useCopilot] Invalid index: ${idOrIndex}`);
                 return undefined;
             }
         }
         else {
             key = idOrIndex;
+            if (!copilotInstances.has(key)) {
+                console.error(`[useCopilot] Invalid Copilot name: "${key}"`);
+                return undefined;
+            }
         }
-        const copilot = copilotInstances.get(key);
-        if (!copilot) {
-            console.warn(`[useCopilot] Copilot instance "${key}" not found.`);
-            return undefined;
-        }
-        return copilot;
-    }, [idOrIndex]);
+        return copilotInstances.get(key);
+    }, () => undefined);
 };
 
 const useCopilotTools = (idOrIndex = defaultBotName) => {

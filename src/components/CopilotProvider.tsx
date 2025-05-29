@@ -1,7 +1,7 @@
 // Updated CopilotProvider with automatic mode detection
 import React, { useEffect } from 'react';
 import { waitForCopilot } from '../core/waitForCopilot';
-import { copilotInstances } from '../core/CopilotInstanceManager';
+import { copilotInstances, notifyCopilotSubscribers } from '../core/CopilotInstanceManager';
 import { validateBotName } from '../utills/validateBotName';
 import { defaultBotName, type CopilotAPI } from '../types/CopilotTypes';
 
@@ -62,6 +62,7 @@ const injectCopilotScript = (
     if (copilot) {
       copilotInstances.set(key, copilot);
       registeredCopilotNames.push(key);
+      notifyCopilotSubscribers();
       console.log(`[CopilotProvider] Registered: ${key}`);
     }
   });
@@ -72,7 +73,7 @@ export const CopilotProvider = (props: CopilotProviderProps) => {
     // MULTI mode
     if ('instances' in props && Array.isArray(props.instances)) {
       props.instances.forEach(({ token, config = {}, scriptUrl, botName }, index) => {
-        const instanceKey = botName || `${defaultBotName}${index + 1}`;
+        const instanceKey = botName || `${defaultBotName}${index}`;
         injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
       });
     }

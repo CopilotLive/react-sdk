@@ -1,27 +1,33 @@
-import { useMemo } from 'react';
-import { copilotInstances } from '../CopilotInstanceManager';
-import { defaultBotName, type CopilotAPI } from '../../types/CopilotTypes';
+import { useSyncExternalStore } from 'react';
+import { copilotInstances, subscribeCopilotInstances } from '../CopilotInstanceManager';
 import { registeredCopilotNames } from '../../components/CopilotProvider';
 
-export const useCopilot = (idOrIndex: string | number = defaultBotName): CopilotAPI | undefined => {
-  return useMemo(() => {
-    let key: string;
+export const useCopilot = (idOrIndex?: string | number) => {
+  return useSyncExternalStore(
+    subscribeCopilotInstances,
+    () => {
+      const registered = registeredCopilotNames;
 
-    if (typeof idOrIndex === 'number') {
-      key = registeredCopilotNames[idOrIndex];
-      if (!key) {
-        console.warn(`[useCopilot] No Copilot registered at index ${idOrIndex}`);
-        return undefined;
+      let key: string | undefined;
+
+      if (idOrIndex === undefined) {
+        key = registered[0]; // default to index 0
+      } else if (typeof idOrIndex === 'number') {
+        key = registered[idOrIndex];
+        if (!key) {
+          console.error(`[useCopilot] Invalid index: ${idOrIndex}`);
+          return undefined;
+        }
+      } else {
+        key = idOrIndex;
+        if (!copilotInstances.has(key)) {
+          console.error(`[useCopilot] Invalid Copilot name: "${key}"`);
+          return undefined;
+        }
       }
-    } else {
-      key = idOrIndex;
-    }
 
-    const copilot = copilotInstances.get(key);
-    if (!copilot) {
-      console.warn(`[useCopilot] Copilot instance "${key}" not found.`);
-      return undefined;
-    }
-    return copilot;
-  }, [idOrIndex]);
+      return copilotInstances.get(key);
+    },
+    () => undefined
+  );
 };

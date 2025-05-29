@@ -12,18 +12,21 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
         const check = () => {
             const copilotFn = window[botName];
             const isReady = window[`_${botName}_ready`];
-            if (typeof copilotFn && isReady) {
+            const hasRealAPI = typeof copilotFn === 'function' &&
+                typeof copilotFn.tools?.add === 'function' &&
+                typeof copilotFn.users?.set === 'function';
+            if (isReady && hasRealAPI) {
                 const copilotAPI = {
-                    show: () => copilotFn("event", "open"),
-                    hide: () => copilotFn("event", "close"),
+                    show: () => copilotFn('event', 'open'),
+                    hide: () => copilotFn('event', 'close'),
                     tools: {
-                        add: (tools) => copilotFn.tools?.add?.(tools),
-                        remove: (name) => copilotFn.tools?.remove?.(name),
-                        removeAll: () => copilotFn.tools?.removeAll?.(),
+                        add: (tools) => copilotFn.tools.add(tools),
+                        remove: (name) => copilotFn.tools.remove?.(name),
+                        removeAll: () => copilotFn.tools.removeAll?.(),
                     },
                     users: {
-                        set: (user) => copilotFn.users?.set?.(user),
-                        unset: () => copilotFn.users?.unset?.(),
+                        set: (user) => copilotFn.users.set(user),
+                        unset: () => copilotFn.users.unset(),
                     },
                 };
                 return resolve(copilotAPI);
@@ -38,22 +41,7 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
     });
 };
 
-class CopilotInstanceManager {
-    instances = new Map();
-    set(id, instance) {
-        this.instances.set(id, instance);
-    }
-    get(id) {
-        return this.instances.get(id) || null;
-    }
-    has(id) {
-        return this.instances.has(id);
-    }
-    getAll() {
-        return Object.fromEntries(this.instances.entries());
-    }
-}
-const copilotInstances = new CopilotInstanceManager();
+const copilotInstances = new Map();
 
 exports.CopilotMode = void 0;
 (function (CopilotMode) {
@@ -61,8 +49,17 @@ exports.CopilotMode = void 0;
     CopilotMode["MULTI"] = "multi";
 })(exports.CopilotMode || (exports.CopilotMode = {}));
 
+const validateBotName = (botName) => {
+    const isValid = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(botName);
+    if (!isValid) {
+        throw new Error(`[CopilotProvider] Invalid botName "${botName}". It must start with a letter, $, or _, and contain only letters, numbers, $, or _.`);
+    }
+    return botName;
+};
+
 const injectCopilotScript = (mode, token, config = {}, scriptUrl, botName = 'copilot') => {
-    const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `.${botName}`}`;
+    const safeBotName = validateBotName(botName);
+    const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
     if (document.getElementById(scriptId))
         return;
     const inlineScript = document.createElement('script');
@@ -79,24 +76,24 @@ const injectCopilotScript = (mode, token, config = {}, scriptUrl, botName = 'cop
       js.async=1;
       js.referrerPolicy="origin";
       fjs.parentNode.insertBefore(js,fjs);
-    })(window,document,"script","${botName}");
+    })(window,document,"script","${safeBotName}");
 
-    ${botName}("init", ${JSON.stringify(config)}, function () {
-      window["_${botName}_ready"] = true;
+    ${safeBotName}("init", ${JSON.stringify(config)}, function () {
+      window["_${safeBotName}_ready"] = true;
     });
   `;
-    waitForCopilot(botName).then((copilot) => {
+    document.body.appendChild(inlineScript);
+    waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
-            copilotInstances.set(mode === exports.CopilotMode.MULTI ? botName : 'default', copilot);
+            copilotInstances.set(mode === exports.CopilotMode.MULTI ? safeBotName : 'default', copilot);
         }
     });
-    document.body.appendChild(inlineScript);
 };
 const CopilotProvider = (props) => {
     const mode = props.mode ?? exports.CopilotMode.SINGLE;
     react.useEffect(() => {
         if (mode === exports.CopilotMode.MULTI && 'instances' in props) {
-            props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'Copilot' }) => {
+            props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }) => {
                 injectCopilotScript(mode, token, config, scriptUrl, botName);
             });
         }
@@ -124,9 +121,18 @@ const Copilot = ({ tools, botName = 'default' }) => {
     return null;
 };
 
-const getCopilotInstance = (instanceId = 'default') => copilotInstances.get(instanceId);
+const useCopilot = (instanceId = 'default') => {
+    return react.useMemo(() => {
+        const copilot = copilotInstances.get(instanceId);
+        if (!copilot) {
+            console.warn(`[useCopilot] Copilot instance "${instanceId}" not found.`);
+            return undefined;
+        }
+        return copilot;
+    }, [instanceId]);
+};
 
 exports.Copilot = Copilot;
 exports.CopilotProvider = CopilotProvider;
-exports.getCopilotInstance = getCopilotInstance;
+exports.useCopilot = useCopilot;
 //# sourceMappingURL=index.cjs.js.map

@@ -21,15 +21,15 @@ export enum CopilotMode {
   };
   
   export type CopilotAPI = {
-    show?: () => void;
-    hide?: () => void;
-    tools?: {
-      add?: (tool: ToolDefinition | ToolDefinition[]) => void;
-      remove?: (name: string) => void;
+    show: () => void;
+    hide: () => void;
+    tools: {
+      add: (tool: ToolDefinition | ToolDefinition[]) => void;
+      remove: (name: string) => void;
       removeAll?: () => void;
     };
-    users?: {
-      set?: (user: Record<string, any>) => void;
-      unset?: () => void;
+    users: {
+      set: (user: Record<string, any>) => void;
+      unset: () => void;
     };
   };

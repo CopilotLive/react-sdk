@@ -2,28 +2,26 @@ import React, { useEffect } from 'react';
 import { waitForCopilot } from '../core/waitForCopilot';
 import { copilotInstances } from '../core/CopilotInstanceManager';
 import { CopilotMode } from '../types/CopilotTypes';
-import { SafeBotName } from '../types/SafeBotName';
+import { validateBotName } from '../utills/validateBotName';
 
 type SharedProps = {
   mode?: CopilotMode;
   children: React.ReactNode;
 };
 
-// SINGLE MODE
 type SingleInstanceProps = {
   token: string;
   config?: Record<string, any>;
   scriptUrl?: string;
-  botName?: SafeBotName<string>;
+  botName?: string;
 } & SharedProps & { mode?: CopilotMode.SINGLE };
 
-// MULTI MODE
 type MultiInstanceProps = {
   instances: {
     token: string;
     config?: Record<string, any>;
     scriptUrl?: string;
-    botName?: SafeBotName<string>;
+    botName?: string;
   }[];
 } & SharedProps & { mode: CopilotMode.MULTI };
 
@@ -36,7 +34,8 @@ const injectCopilotScript = (
   scriptUrl?: string,
   botName: string = 'copilot'
 ) => {
-  const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `.${botName}`}`;
+  const safeBotName = validateBotName(botName);
+  const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
   if (document.getElementById(scriptId)) return;
 
   const inlineScript = document.createElement('script');
@@ -53,20 +52,20 @@ const injectCopilotScript = (
       js.async=1;
       js.referrerPolicy="origin";
       fjs.parentNode.insertBefore(js,fjs);
-    })(window,document,"script","${botName}");
+    })(window,document,"script","${safeBotName}");
 
-    ${botName}("init", ${JSON.stringify(config)}, function () {
-      window["_${botName}_ready"] = true;
+    ${safeBotName}("init", ${JSON.stringify(config)}, function () {
+      window["_${safeBotName}_ready"] = true;
     });
   `;
 
-  waitForCopilot(botName).then((copilot) => {
+  document.body.appendChild(inlineScript);
+
+  waitForCopilot(safeBotName).then((copilot) => {
     if (copilot) {
-      copilotInstances.set(mode === CopilotMode.MULTI ? botName : 'default', copilot);
+      copilotInstances.set(mode === CopilotMode.MULTI ? safeBotName : 'default', copilot);
     }
   });
-
-  document.body.appendChild(inlineScript);
 };
 
 export const CopilotProvider = (props: Props) => {
@@ -74,11 +73,11 @@ export const CopilotProvider = (props: Props) => {
 
   useEffect(() => {
     if (mode === CopilotMode.MULTI && 'instances' in props) {
-      props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'Copilot' }) => {
-        injectCopilotScript(mode,token, config, scriptUrl, botName);
+      props.instances.forEach(({ token, config = {}, scriptUrl, botName = 'copilot' }) => {
+        injectCopilotScript(mode, token, config, scriptUrl, botName);
       });
     } else if ('token' in props) {
-      injectCopilotScript(mode,props.token, props.config, props.scriptUrl, props.botName);
+      injectCopilotScript(mode, props.token, props.config, props.scriptUrl, props.botName);
     }
   }, [props]);
 

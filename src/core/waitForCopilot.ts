@@ -15,18 +15,23 @@ export const waitForCopilot = (
       const copilotFn = (window as any)[botName];
       const isReady = (window as any)[`_${botName}_ready`];
 
-      if (typeof copilotFn && isReady) {
+      const hasRealAPI =
+        typeof copilotFn === 'function' &&
+        typeof copilotFn.tools?.add === 'function' &&
+        typeof copilotFn.users?.set === 'function';
+
+      if (isReady && hasRealAPI) {
         const copilotAPI: CopilotAPI = {
-          show: () => copilotFn("event", "open"),
-          hide: () => copilotFn("event", "close"),
+          show: () => copilotFn('event', 'open'),
+          hide: () => copilotFn('event', 'close'),
           tools: {
-            add: (tools) => copilotFn.tools?.add?.(tools),
-            remove: (name) => copilotFn.tools?.remove?.(name),
-            removeAll: () => copilotFn.tools?.removeAll?.(),
+            add: (tools) => copilotFn.tools.add(tools),
+            remove: (name) => copilotFn.tools.remove?.(name),
+            removeAll: () => copilotFn.tools.removeAll?.(),
           },
           users: {
-            set: (user) => copilotFn.users?.set?.(user),
-            unset: () => copilotFn.users?.unset?.(),
+            set: (user) => copilotFn.users.set(user),
+            unset: () => copilotFn.users.unset(),
           },
         };
 

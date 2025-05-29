@@ -21,23 +21,18 @@ type ToolDefinition = {
     handler: (args: Record<string, any>) => Promise<any> | any;
 };
 type CopilotAPI = {
-    show?: () => void;
-    hide?: () => void;
-    tools?: {
-        add?: (tool: ToolDefinition | ToolDefinition[]) => void;
-        remove?: (name: string) => void;
+    show: () => void;
+    hide: () => void;
+    tools: {
+        add: (tool: ToolDefinition | ToolDefinition[]) => void;
+        remove: (name: string) => void;
         removeAll?: () => void;
     };
-    users?: {
-        set?: (user: Record<string, any>) => void;
-        unset?: () => void;
+    users: {
+        set: (user: Record<string, any>) => void;
+        unset: () => void;
     };
 };
-
-/**
- * Type-safe botName constraint — must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/
- */
-type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? First extends Lowercase<First> | Uppercase<First> | '_' | '$' ? Rest extends `${string}` ? T extends `${string}-${string}` | `${string}.${string}` | `${string} ${string}` ? never : T : never : never : never;
 
 type SharedProps = {
     mode?: CopilotMode;
@@ -47,7 +42,7 @@ type SingleInstanceProps = {
     token: string;
     config?: Record<string, any>;
     scriptUrl?: string;
-    botName?: SafeBotName<string>;
+    botName?: string;
 } & SharedProps & {
     mode?: CopilotMode.SINGLE;
 };
@@ -56,7 +51,7 @@ type MultiInstanceProps = {
         token: string;
         config?: Record<string, any>;
         scriptUrl?: string;
-        botName?: SafeBotName<string>;
+        botName?: string;
     }[];
 } & SharedProps & {
     mode: CopilotMode.MULTI;
@@ -70,7 +65,12 @@ type Props = {
 };
 declare const Copilot: ({ tools, botName }: Props) => null;
 
-declare const getCopilotInstance: (instanceId?: string) => CopilotAPI | null;
+/**
+ * Type-safe botName constraint — must match /^[a-zA-Z_$][a-zA-Z0-9_$]*$/
+ */
+type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? First extends Lowercase<First> | Uppercase<First> | '_' | '$' ? Rest extends `${string}` ? T extends `${string}-${string}` | `${string}.${string}` | `${string} ${string}` ? never : T : never : never : never;
 
-export { Copilot, CopilotMode, CopilotProvider, getCopilotInstance };
+declare const useCopilot: (instanceId?: string) => CopilotAPI | undefined;
+
+export { Copilot, CopilotMode, CopilotProvider, useCopilot };
 export type { CopilotAPI, SafeBotName, ToolDefinition };

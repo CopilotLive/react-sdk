@@ -19,6 +19,7 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
+  "keywords": ["copilot", "sdk", "react", "chatbot"],
   "license": "MIT",
   "peerDependencies": {
     "react": ">=17.0.0",

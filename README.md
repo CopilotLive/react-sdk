@@ -272,13 +272,13 @@ MIT License - see the LICENSE file for details.
 
 The README has been updated with comprehensive documentation that includes:
 
-✅ **Enhanced Features Section** with emojis and detailed descriptions
-✅ **Complete Usage Examples** including React hooks usage
-✅ **Comprehensive API Reference** with proper TypeScript definitions
-✅ **Development Instructions** for building and testing
-✅ **Professional Formatting** with clear sections and organization
-✅ **Real-world Examples** showing practical implementations
-✅ **Hook Documentation** for `useCopilot`, `useCopilotTools`, and `useCopilotUser`
+✅ Enhanced Features Section** with emojis and detailed descriptions
+✅ Complete Usage Examples** including React hooks usage
+✅ Comprehensive API Reference** with proper TypeScript definitions
+✅ Development Instructions** for building and testing
+✅ Professional Formatting** with clear sections and organization
+✅ Real-world Examples** showing practical implementations
+✅ Hook Documentation** for `useCopilot`, `useCopilotTools`, and `useCopilotUser`
 
 You can now save this content to your README.md file.
 ```

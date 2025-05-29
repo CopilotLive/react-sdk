@@ -92,15 +92,15 @@ const CopilotProvider = (props) => {
     react.useEffect(() => {
         // MULTI mode
         if ('instances' in props && Array.isArray(props.instances)) {
-            props.instances.forEach(({ token, config = {}, scriptUrl, botName = defaultBotName }, index) => {
-                const instanceKey = `${botName}${index + 1}`;
+            props.instances.forEach(({ token, config = {}, scriptUrl, botName }, index) => {
+                const instanceKey = botName || `${defaultBotName}${index + 1}`;
                 injectCopilotScript(instanceKey, token, config, scriptUrl, botName);
             });
         }
         // SINGLE mode
         else if ('token' in props) {
-            const { token, config = {}, scriptUrl, botName = defaultBotName } = props;
-            injectCopilotScript(defaultBotName, token, config, scriptUrl, botName);
+            const { token, config = {}, scriptUrl, botName } = props;
+            injectCopilotScript(botName || defaultBotName, token, config, scriptUrl, botName);
         }
     }, [props]);
     return jsxRuntime.jsx(jsxRuntime.Fragment, { children: props.children });

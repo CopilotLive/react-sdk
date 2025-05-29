@@ -127,5 +127,15 @@ const useCopilot = (instanceId = 'copilot1') => {
     }, [instanceId]);
 };
 
-export { Copilot, CopilotProvider, useCopilot };
+const useCopilotTools = (instanceId = 'copilot1') => {
+    const copilot = useCopilot(instanceId);
+    return copilot?.tools;
+};
+
+const useCopilotUser = (instanceId = 'copilot1') => {
+    const copilot = useCopilot(instanceId);
+    return copilot?.users;
+};
+
+export { Copilot, CopilotProvider, useCopilot, useCopilotTools, useCopilotUser };
 //# sourceMappingURL=index.esm.js.map

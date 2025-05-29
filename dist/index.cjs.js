@@ -129,7 +129,19 @@ const useCopilot = (instanceId = 'copilot1') => {
     }, [instanceId]);
 };
 
+const useCopilotTools = (instanceId = 'copilot1') => {
+    const copilot = useCopilot(instanceId);
+    return copilot?.tools;
+};
+
+const useCopilotUser = (instanceId = 'copilot1') => {
+    const copilot = useCopilot(instanceId);
+    return copilot?.users;
+};
+
 exports.Copilot = Copilot;
 exports.CopilotProvider = CopilotProvider;
 exports.useCopilot = useCopilot;
+exports.useCopilotTools = useCopilotTools;
+exports.useCopilotUser = useCopilotUser;
 //# sourceMappingURL=index.cjs.js.map

@@ -58,5 +58,16 @@ type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? F
 
 declare const useCopilot: (instanceId?: string) => CopilotAPI | undefined;
 
-export { Copilot, CopilotProvider, useCopilot };
+declare const useCopilotTools: (instanceId?: string) => {
+    add: (tool: ToolDefinition | ToolDefinition[]) => void;
+    remove: (name: string) => void;
+    removeAll?: () => void;
+} | undefined;
+
+declare const useCopilotUser: (instanceId?: string) => {
+    set: (user: Record<string, any>) => void;
+    unset: () => void;
+} | undefined;
+
+export { Copilot, CopilotProvider, useCopilot, useCopilotTools, useCopilotUser };
 export type { CopilotAPI, SafeBotName, ToolDefinition };

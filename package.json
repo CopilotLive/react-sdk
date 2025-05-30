@@ -20,6 +20,7 @@
     "typecheck": "tsc --noEmit"
   },
   "keywords": ["copilot", "sdk", "react", "chatbot"],
+  "author": "Raj pratap Singh Jadon",
   "license": "MIT",
   "peerDependencies": {
     "react": ">=17.0.0",

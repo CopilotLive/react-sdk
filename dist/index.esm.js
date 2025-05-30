@@ -110,13 +110,13 @@ const useCopilot = (idOrIndex) => {
         const interval = 100;
         const maxTries = MAX_WAIT_TIME / interval;
         let tries = 0;
-        const keys = Array.from(copilotInstances.keys());
-        const key = idOrIndex === undefined
-            ? keys[0]
-            : typeof idOrIndex === 'number'
-                ? keys[idOrIndex]
-                : idOrIndex;
         const id = setInterval(() => {
+            const keys = Array.from(copilotInstances.keys());
+            const key = idOrIndex === undefined
+                ? keys[0]
+                : typeof idOrIndex === 'number'
+                    ? keys[idOrIndex]
+                    : idOrIndex;
             if (key && copilotInstances.has(key)) {
                 setCopilot(copilotInstances.get(key));
                 clearInterval(id);

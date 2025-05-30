@@ -13,6 +13,7 @@ export const useCopilot = (idOrIndex?: string | number) => {
     const maxTries = MAX_WAIT_TIME / interval;
     let tries = 0;
 
+    const id = setInterval(() => {
     const keys = Array.from(copilotInstances.keys());
     const key =
       idOrIndex === undefined
@@ -20,8 +21,7 @@ export const useCopilot = (idOrIndex?: string | number) => {
         : typeof idOrIndex === 'number'
         ? keys[idOrIndex]
         : idOrIndex;
-
-    const id = setInterval(() => {
+        
       if (key && copilotInstances.has(key)) {
         setCopilot(copilotInstances.get(key));
         clearInterval(id);

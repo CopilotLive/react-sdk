@@ -1,12 +1,26 @@
-import { useCopilot } from "./useCopilot";
+import { useEffect } from 'react';
+import { useCopilot } from './useCopilot';
+import type { ToolDefinition } from '../../types/CopilotTypes';
 
-export const useCopilotTools = (idOrIndex?: string | number) => {
-  const copilot = useCopilot(idOrIndex);
+export const useCopilotTool = (
+  tool: ToolDefinition,
+  options?: { removeOnUnmount?: boolean; idOrIndex?: string | number }
+) => {
+  const { addTool, removeTool } = useCopilot(options?.idOrIndex);
 
-  if (!copilot) {
-    console.warn('[useCopilotTools] Copilot instance not found.');
-    return undefined;
-  }
+  useEffect(() => {
+    if (!tool?.name) {
+      console.warn('[useCopilotTool] Tool must have a valid name');
+      return;
+    }
 
-  return copilot.tools;
+    addTool?.(tool);
+
+    return () => {
+      if (options?.removeOnUnmount && tool?.name) {
+        removeTool?.(tool.name);
+      }
+    };
+    // Dependencies: only care about tool.name and bot index/name
+  }, [tool.name, addTool, removeTool]);
 };

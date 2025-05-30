@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { copilotInstances } from '../CopilotInstanceManager';
-import { CopilotAPI } from '../../types/CopilotTypes';
+import { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
 
-const MAX_WAIT_TIME = 5000; // 5 seconds timeout
+const MAX_WAIT_TIME = 5000;
 
 export const useCopilot = (idOrIndex?: string | number) => {
   const [copilot, setCopilot] = useState<CopilotAPI>();
@@ -11,30 +11,19 @@ export const useCopilot = (idOrIndex?: string | number) => {
   useEffect(() => {
     const interval = 100;
     const maxTries = MAX_WAIT_TIME / interval;
-
     let tries = 0;
 
+    const keys = Array.from(copilotInstances.keys());
+    let key: string | undefined = 
+      idOrIndex === undefined ? keys[0]
+      : typeof idOrIndex === 'number' ? keys[idOrIndex]
+      : idOrIndex;
+
     const id = setInterval(() => {
-      const keys = Array.from(copilotInstances.keys());
-
-      let key: string | undefined;
-
-      if (idOrIndex === undefined) {
-        key = keys[0];
-      } else if (typeof idOrIndex === 'number') {
-        key = keys[idOrIndex];
-      } else {
-        key = idOrIndex;
-      }
-
       if (key && copilotInstances.has(key)) {
         setCopilot(copilotInstances.get(key));
         clearInterval(id);
-        return;
-      }
-
-      tries++;
-      if (tries >= maxTries) {
+      } else if (++tries >= maxTries) {
         setHasErrored(true);
         clearInterval(id);
       }
@@ -45,11 +34,18 @@ export const useCopilot = (idOrIndex?: string | number) => {
 
   useEffect(() => {
     if (hasErrored) {
-      console.error(
-        `[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found`
-      );
+      console.error(`[useCopilot] Copilot "${String(idOrIndex ?? '0')}" not found`);
     }
   }, [hasErrored, idOrIndex]);
 
-  return copilot;
+  return {
+    show: () => copilot?.show(),
+    hide: () => copilot?.hide(),
+    addTool: (tool: ToolDefinition | ToolDefinition[]) => copilot?.tools?.add(tool),
+    removeTool: (name: string) => copilot?.tools?.remove(name),
+    removeAllTools: () => copilot?.tools?.removeAll?.(),
+    setUser: (user: Record<string, any>) => copilot?.users?.set(user),
+    unsetUser: () => copilot?.users?.unset(),
+    raw: copilot,
+  };
 };

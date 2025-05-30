@@ -104,7 +104,7 @@ const CopilotProvider = (props) => {
     return jsxRuntime.jsx(jsxRuntime.Fragment, { children: props.children });
 };
 
-const MAX_WAIT_TIME = 5000; // 5 seconds timeout
+const MAX_WAIT_TIME = 5000;
 const useCopilot = (idOrIndex) => {
     const [copilot, setCopilot] = react.useState();
     const [hasErrored, setHasErrored] = react.useState(false);
@@ -112,25 +112,16 @@ const useCopilot = (idOrIndex) => {
         const interval = 100;
         const maxTries = MAX_WAIT_TIME / interval;
         let tries = 0;
+        const keys = Array.from(copilotInstances.keys());
+        let key = idOrIndex === undefined ? keys[0]
+            : typeof idOrIndex === 'number' ? keys[idOrIndex]
+                : idOrIndex;
         const id = setInterval(() => {
-            const keys = Array.from(copilotInstances.keys());
-            let key;
-            if (idOrIndex === undefined) {
-                key = keys[0];
-            }
-            else if (typeof idOrIndex === 'number') {
-                key = keys[idOrIndex];
-            }
-            else {
-                key = idOrIndex;
-            }
             if (key && copilotInstances.has(key)) {
                 setCopilot(copilotInstances.get(key));
                 clearInterval(id);
-                return;
             }
-            tries++;
-            if (tries >= maxTries) {
+            else if (++tries >= maxTries) {
                 setHasErrored(true);
                 clearInterval(id);
             }
@@ -139,50 +130,76 @@ const useCopilot = (idOrIndex) => {
     }, [idOrIndex]);
     react.useEffect(() => {
         if (hasErrored) {
-            console.error(`[useCopilot] Copilot instance "${String(idOrIndex ?? '0')}" not found`);
+            console.error(`[useCopilot] Copilot "${String(idOrIndex ?? '0')}" not found`);
         }
     }, [hasErrored, idOrIndex]);
-    return copilot;
+    return {
+        show: () => copilot?.show(),
+        hide: () => copilot?.hide(),
+        addTool: (tool) => copilot?.tools?.add(tool),
+        removeTool: (name) => copilot?.tools?.remove(name),
+        removeAllTools: () => copilot?.tools?.removeAll?.(),
+        setUser: (user) => copilot?.users?.set(user),
+        unsetUser: () => copilot?.users?.unset(),
+        raw: copilot,
+    };
 };
 
 const Copilot = ({ tools, botName }) => {
-    const copilot = useCopilot(botName);
+    const { addTool } = useCopilot(botName);
     react.useEffect(() => {
-        if (!copilot || !tools)
+        if (!tools || !addTool) {
+            if (!tools) {
+                console.warn('[Copilot] No tools provided.');
+            }
+            if (!addTool) {
+                console.warn(`[Copilot] Copilot instance for "${botName ?? 0}" not ready or missing.`);
+            }
             return;
-        if (typeof copilot.tools?.add === 'function') {
-            copilot.tools.add(tools);
-            const count = Array.isArray(tools) ? tools.length : 1;
-            console.log(`[Copilot] Registered ${count} tool(s)`);
         }
-        else {
-            console.warn(`[Copilot] tools.add() not available`);
-        }
-    }, [copilot, tools]);
+        addTool(tools);
+        const count = Array.isArray(tools) ? tools.length : 1;
+        console.log(`[Copilot] Registered ${count} tool(s)`);
+    }, [tools, addTool]);
     return null;
 };
 
-const useCopilotTools = (idOrIndex) => {
-    const copilot = useCopilot(idOrIndex);
-    if (!copilot) {
-        console.warn('[useCopilotTools] Copilot instance not found.');
-        return undefined;
-    }
-    return copilot.tools;
+const useCopilotTool = (tool, options) => {
+    const { addTool, removeTool } = useCopilot(options?.idOrIndex);
+    react.useEffect(() => {
+        if (!tool?.name) {
+            console.warn('[useCopilotTool] Tool must have a valid name');
+            return;
+        }
+        addTool?.(tool);
+        return () => {
+            if (options?.removeOnUnmount && tool?.name) {
+                removeTool?.(tool.name);
+            }
+        };
+        // Dependencies: only care about tool.name and bot index/name
+    }, [tool.name, addTool, removeTool]);
 };
 
-const useCopilotUser = (idOrIndex) => {
-    const copilot = useCopilot(idOrIndex);
-    if (!copilot) {
-        console.warn('[useCopilotUser] Copilot instance not found.');
-        return undefined;
-    }
-    return copilot.users;
+const useCopilotUser = (user, options) => {
+    const { setUser, unsetUser } = useCopilot(options?.idOrIndex);
+    react.useEffect(() => {
+        if (!user) {
+            console.warn('[useCopilotUser] No user object provided');
+            return;
+        }
+        setUser?.(user);
+        return () => {
+            if (options?.unsetOnUnmount) {
+                unsetUser?.();
+            }
+        };
+    }, [user, setUser, unsetUser]);
 };
 
 exports.Copilot = Copilot;
 exports.CopilotProvider = CopilotProvider;
 exports.useCopilot = useCopilot;
-exports.useCopilotTools = useCopilotTools;
+exports.useCopilotTool = useCopilotTool;
 exports.useCopilotUser = useCopilotUser;
 //# sourceMappingURL=index.cjs.js.map

@@ -1,4 +1,4 @@
-export declare const useCopilotUser: (idOrIndex?: string | number) => {
-    set: (user: Record<string, any>) => void;
-    unset: () => void;
-} | undefined;
+export declare const useCopilotUser: (user: Record<string, any>, options?: {
+    unsetOnUnmount?: boolean;
+    idOrIndex?: string | number;
+}) => void;

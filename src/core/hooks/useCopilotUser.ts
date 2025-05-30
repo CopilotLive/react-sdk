@@ -1,12 +1,24 @@
-import { useCopilot } from "./useCopilot";
+import { useEffect } from 'react';
+import { useCopilot } from './useCopilot';
 
-export const useCopilotUser = (idOrIndex?: string | number) => {
-  const copilot = useCopilot(idOrIndex);
+export const useCopilotUser = (
+  user: Record<string, any>,
+  options?: { unsetOnUnmount?: boolean; idOrIndex?: string | number }
+) => {
+  const { setUser, unsetUser } = useCopilot(options?.idOrIndex);
 
-  if (!copilot) {
-    console.warn('[useCopilotUser] Copilot instance not found.');
-    return undefined;
-  }
+  useEffect(() => {
+    if (!user) {
+      console.warn('[useCopilotUser] No user object provided');
+      return;
+    }
 
-  return copilot.users;
+    setUser?.(user);
+
+    return () => {
+      if (options?.unsetOnUnmount) {
+        unsetUser?.();
+      }
+    };
+  }, [user, setUser, unsetUser]);
 };

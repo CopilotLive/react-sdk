@@ -4,23 +4,27 @@ import { type ToolDefinition } from '../types/CopilotTypes';
 
 type Props = {
   tools?: ToolDefinition | ToolDefinition[];
-  botName?: string | number; // optional index or string
+  botName?: string | number; // string name or index
 };
 
 export const Copilot = ({ tools, botName }: Props) => {
-  const copilot = useCopilot(botName);
+  const { addTool } = useCopilot(botName);
 
   useEffect(() => {
-    if (!copilot || !tools) return;
-
-    if (typeof copilot.tools?.add === 'function') {
-      copilot.tools.add(tools);
-      const count = Array.isArray(tools) ? tools.length : 1;
-      console.log(`[Copilot] Registered ${count} tool(s)`);
-    } else {
-      console.warn(`[Copilot] tools.add() not available`);
+    if (!tools || !addTool) {
+      if (!tools) {
+        console.warn('[Copilot] No tools provided.');
+      }
+      if (!addTool) {
+        console.warn(`[Copilot] Copilot instance for "${botName ?? 0}" not ready or missing.`);
+      }
+      return;
     }
-  }, [copilot, tools]);
+
+    addTool(tools);
+    const count = Array.isArray(tools) ? tools.length : 1;
+    console.log(`[Copilot] Registered ${count} tool(s)`);
+  }, [tools, addTool]);
 
   return null;
 };

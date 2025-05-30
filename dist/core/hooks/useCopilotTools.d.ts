@@ -1,5 +1,7 @@
 import type { ToolDefinition } from '../../types/CopilotTypes';
-export declare const useCopilotTool: (tool: ToolDefinition, options?: {
+interface Options {
     removeOnUnmount?: boolean;
     idOrIndex?: string | number;
-}) => void;
+}
+export declare const useCopilotTool: (toolOrTools: ToolDefinition | ToolDefinition[], options?: Options) => void;
+export {};

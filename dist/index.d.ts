@@ -59,7 +59,7 @@ type SafeBotName<T extends string> = T extends `${infer First}${infer Rest}` ? F
 declare const useCopilot: (idOrIndex?: string | number) => {
     show: () => void | undefined;
     hide: () => void | undefined;
-    addTool: (tool: ToolDefinition | ToolDefinition[]) => void | undefined;
+    addTool: (toolOrTools: ToolDefinition | ToolDefinition[]) => void;
     removeTool: (name: string) => void | undefined;
     removeAllTools: () => void | undefined;
     setUser: (user: Record<string, any>) => void | undefined;
@@ -67,15 +67,17 @@ declare const useCopilot: (idOrIndex?: string | number) => {
     raw: CopilotAPI | undefined;
 };
 
-declare const useCopilotTool: (tool: ToolDefinition, options?: {
+interface Options$1 {
     removeOnUnmount?: boolean;
     idOrIndex?: string | number;
-}) => void;
+}
+declare const useCopilotTool: (toolOrTools: ToolDefinition | ToolDefinition[], options?: Options$1) => void;
 
-declare const useCopilotUser: (user: Record<string, any>, options?: {
+interface Options {
     unsetOnUnmount?: boolean;
     idOrIndex?: string | number;
-}) => void;
+}
+declare const useCopilotUser: (user: Record<string, any>, options?: Options) => void;
 
 export { Copilot, CopilotProvider, useCopilot, useCopilotTool, useCopilotUser };
 export type { CopilotAPI, SafeBotName, ToolDefinition };

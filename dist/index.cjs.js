@@ -104,7 +104,7 @@ const CopilotProvider = (props) => {
     return jsxRuntime.jsx(jsxRuntime.Fragment, { children: props.children });
 };
 
-const MAX_WAIT_TIME = 5000;
+const MAX_WAIT_TIME = 5000; // in ms
 const useCopilot = (idOrIndex) => {
     const [copilot, setCopilot] = react.useState();
     const [hasErrored, setHasErrored] = react.useState(false);
@@ -113,8 +113,10 @@ const useCopilot = (idOrIndex) => {
         const maxTries = MAX_WAIT_TIME / interval;
         let tries = 0;
         const keys = Array.from(copilotInstances.keys());
-        let key = idOrIndex === undefined ? keys[0]
-            : typeof idOrIndex === 'number' ? keys[idOrIndex]
+        const key = idOrIndex === undefined
+            ? keys[0]
+            : typeof idOrIndex === 'number'
+                ? keys[idOrIndex]
                 : idOrIndex;
         const id = setInterval(() => {
             if (key && copilotInstances.has(key)) {
@@ -133,10 +135,16 @@ const useCopilot = (idOrIndex) => {
             console.error(`[useCopilot] Copilot "${String(idOrIndex ?? '0')}" not found`);
         }
     }, [hasErrored, idOrIndex]);
+    const addTool = (toolOrTools) => {
+        if (!copilot?.tools?.add)
+            return;
+        const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
+        tools.forEach(tool => copilot.tools.add(tool));
+    };
     return {
         show: () => copilot?.show(),
         hide: () => copilot?.hide(),
-        addTool: (tool) => copilot?.tools?.add(tool),
+        addTool,
         removeTool: (name) => copilot?.tools?.remove(name),
         removeAllTools: () => copilot?.tools?.removeAll?.(),
         setUser: (user) => copilot?.users?.set(user),
@@ -164,37 +172,32 @@ const Copilot = ({ tools, botName }) => {
     return null;
 };
 
-const useCopilotTool = (tool, options) => {
+const useCopilotTool = (toolOrTools, options) => {
     const { addTool, removeTool } = useCopilot(options?.idOrIndex);
     react.useEffect(() => {
-        if (!tool?.name) {
-            console.warn('[useCopilotTool] Tool must have a valid name');
-            return;
-        }
-        addTool?.(tool);
+        const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
+        addTool?.(tools);
         return () => {
-            if (options?.removeOnUnmount && tool?.name) {
-                removeTool?.(tool.name);
+            if (options?.removeOnUnmount) {
+                tools.forEach(tool => {
+                    if (tool?.name)
+                        removeTool?.(tool.name);
+                });
             }
         };
-        // Dependencies: only care about tool.name and bot index/name
-    }, [tool.name, addTool, removeTool]);
+    }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount]);
 };
 
 const useCopilotUser = (user, options) => {
     const { setUser, unsetUser } = useCopilot(options?.idOrIndex);
     react.useEffect(() => {
-        if (!user) {
-            console.warn('[useCopilotUser] No user object provided');
-            return;
-        }
         setUser?.(user);
         return () => {
             if (options?.unsetOnUnmount) {
                 unsetUser?.();
             }
         };
-    }, [user, setUser, unsetUser]);
+    }, [setUser, unsetUser, user, options?.unsetOnUnmount]);
 };
 
 exports.Copilot = Copilot;

@@ -1,4 +1,6 @@
-export declare const useCopilotUser: (user: Record<string, any>, options?: {
+interface Options {
     unsetOnUnmount?: boolean;
     idOrIndex?: string | number;
-}) => void;
+}
+export declare const useCopilotUser: (user: Record<string, any>, options?: Options) => void;
+export {};

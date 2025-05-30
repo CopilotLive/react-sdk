@@ -4,13 +4,13 @@ A React component library for integrating the Copilot chat widget into your appl
 
 ## ✨ Features
 
-- 🔄 **Multiple Mode Support**: Run single or multiple Copilot instances simultaneously
-- 🛠 **Custom Tools Integration**: Easy registration and management of custom tools with async handler support
-- 👥 **User Management**: Set and manage user configurations for personalized experiences
-- 🎯 **Type Safety**: Full TypeScript support with comprehensive type definitions and safe bot name validation
-- ⚡ **Lightweight**: Minimal dependencies with only React as a peer dependency
-- 🔌 **Easy Integration**: Simple React components and hooks for quick implementation
-- 🪝 **React Hooks**: Dedicated hooks for accessing Copilot instances, tools, and user management
+- 🔄 **Automatic Single/Multi Mode**: Automatically detects and supports both single and multiple Copilot instances.
+- 🛠 **Custom Tools Integration**: Register powerful tools with support for async handlers.
+- 👥 **User Management**: Easily set/unset user information across sessions.
+- 🪝 **Ergonomic Hooks**: Intuitive and declarative hooks to register tools and users via `useCopilotTool` and `useCopilotUser`.
+- 🧠 **Smart Resolution**: Access Copilot instance by `name` or `index`, with graceful fallback and validation.
+- ⚡ **Type-Safe**: Built in TypeScript with full type support and validation helpers.
+- 🔌 **Simple Integration**: Drop-in provider and hook system for seamless integration.
 
 ## 📦 Installation
 
@@ -21,7 +21,8 @@ yarn add react-copilot-widget
 ```
 
 ## 🚀 Usage
-Basic Setup (Single Instance)
+
+### Basic Setup (Single Instance)
 
 ```tsx
 import { CopilotProvider } from 'react-copilot-widget';
@@ -30,19 +31,15 @@ function App() {
   return (
     <CopilotProvider
       token="your-copilot-token"
-      config={{
-        // Your Copilot configuration
-        theme: 'light',
-        position: 'bottom-right'
-      }}
-      botName="myCopilot" // Optional custom name
+      config={{ theme: 'light', position: 'bottom-right' }}
     >
-      {/* Your app content */}
+      <YourApp />
     </CopilotProvider>
   );
 }
 ```
-Multiple Instances
+
+### Multiple Instances (Auto-detected)
 
 ```tsx
 import { CopilotProvider } from 'react-copilot-widget';
@@ -51,154 +48,125 @@ function App() {
   return (
     <CopilotProvider
       instances={[
-        {
-          token: 'token-1',
-          botName: 'copilot1',
-          config: { theme: 'light' }
-        },
-        {
-          token: 'token-2',
-          botName: 'copilot2',
-          config: { theme: 'dark' }
-        }
+        { token: 'token-1', config: { theme: 'light' } },
+        { token: 'token-2', config: { theme: 'dark' } }
       ]}
     >
-      {/* Your app content */}
+      <YourApp />
     </CopilotProvider>
   );
 }
 ```
-Adding Custom Tools
+
+### Registering Tools via Component
 
 ```tsx
 import { Copilot, ToolDefinition } from 'react-copilot-widget';
 
-const customTools: ToolDefinition[] = [
+const tools: ToolDefinition[] = [
   {
     name: 'get_user_info',
-    description: 'Retrieves current user information',
+    description: 'Retrieves user info',
     parameters: {
       type: 'object',
       properties: {
-        userId: {
-          type: 'string',
-          description: 'The user ID to fetch information for'
-        }
+        userId: { type: 'string', description: 'User ID' },
       },
       required: ['userId']
     },
-    timeout: 5000,
-    handler: async (args) => {
-      const response = await fetch(`/api/users/${args.userId}`);
-      return await response.json();
-    }
-  },
-  {
-    name: 'calculate_sum',
-    description: 'Calculates the sum of two numbers',
-    parameters: {
-      type: 'object',
-      properties: {
-        a: { type: 'number', description: 'First number' },
-        b: { type: 'number', description: 'Second number' }
-      },
-      required: ['a', 'b']
-    },
-    handler: (args) => {
-      return { result: args.a + args.b };
-    }
+    handler: async ({ userId }) => fetch(`/api/users/${userId}`).then(res => res.json())
   }
 ];
 
-function MyComponent() {
-  return <Copilot tools={customTools} botName="copilot1" />;
+function ToolsLoader() {
+  return <Copilot tools={tools} />;
 }
 ```
-Using React Hooks
+
+### Register Tool via Hook
 
 ```tsx
-import { useCopilot, useCopilotTools, useCopilotUser } from 'react-copilot-widget';
+import { useCopilotTool } from 'react-copilot-widget';
 
-function CopilotController() {
-  const copilot = useCopilot('copilot1'); // Get specific instance
-  const tools = useCopilotTools('copilot1'); // Get tools API
-  const users = useCopilotUser('copilot1'); // Get users API
-
-  const handleShow = () => copilot?.show();
-  const handleHide = () => copilot?.hide();
-  
-  const addTool = () => {
-    tools?.add({
-      name: 'dynamic_tool',
-      description: 'Dynamically added tool',
-      handler: () => ({ message: 'Tool executed!' })
-    });
-  };
-  
-  const setUser = () => {
-    users?.set({
-      id: 'user123',
-      name: 'John Doe',
-      email: 'john@example.com'
-    });
-  };
-
-  return (
-    <div>
-      <button onClick={handleShow}>Show Copilot</button>
-      <button onClick={handleHide}>Hide Copilot</button>
-      <button onClick={addTool}>Add Tool</button>
-      <button onClick={setUser}>Set User</button>
-    </div>
-  );
-}
+useCopilotTool({
+  name: 'calculate_sum',
+  description: 'Adds two numbers',
+  parameters: {
+    type: 'object',
+    properties: {
+      a: { type: 'number' },
+      b: { type: 'number' }
+    },
+    required: ['a', 'b']
+  },
+  handler: ({ a, b }) => ({ result: a + b })
+}, { removeOnUnmount: true });
 ```
-Managing Multiple Instances by Index
+
+### Set/Unset User via Hook
+
+```tsx
+import { useCopilotUser } from 'react-copilot-widget';
+
+useCopilotUser({
+  id: 'user123',
+  name: 'Jane Doe',
+  email: 'jane@example.com'
+}, { unsetOnUnmount: true });
+```
+
+### Controlling Instances
 
 ```tsx
 import { useCopilot } from 'react-copilot-widget';
 
-function MultiCopilotController() {
-  const firstCopilot = useCopilot(0);  // Get first instance
-  const secondCopilot = useCopilot(1); // Get second instance
-  
+function Controls() {
+  const copilot = useCopilot(); // Defaults to index 0
+
   return (
-    <div>
-      <button onClick={() => firstCopilot?.show()}>Show First Copilot</button>
-      <button onClick={() => secondCopilot?.show()}>Show Second Copilot</button>
-    </div>
+    <>
+      <button onClick={() => copilot.show?.()}>Open</button>
+      <button onClick={() => copilot.hide?.()}>Close</button>
+    </>
   );
 }
 ```
 
-## 📚 API Reference
-CopilotProvider Props
-
-Single Instance Mode
+### By Index or Name
 
 ```tsx
+const copilotA = useCopilot('copilot1');
+const copilotB = useCopilot(1);
+```
+
+## 📚 API Reference
+
+### CopilotProvider
+```ts
+// Single Instance
 interface SingleInstance {
   token: string;
   config?: Record<string, any>;
   scriptUrl?: string;
   botName?: string;
 }
-```
-Multiple Instance Mode
-```tsx
+
+// Multiple
 interface MultiInstance {
   instances: SingleInstance[];
 }
 ```
-Copilot Component Props
-```tsx
+
+### Copilot Component
+```ts
 interface CopilotProps {
-   tools?: ToolDefinition | ToolDefinition[]; // Custom tools to register
-   botName?: string | number;                 // Target Copilot instance name or index
+  tools?: ToolDefinition | ToolDefinition[];
+  botName?: string | number;
 }
 ```
-ToolDefinition Type
-```tsx
+
+### ToolDefinition
+```ts
 type ToolDefinition = {
   name: string;
   description: string;
@@ -207,17 +175,18 @@ type ToolDefinition = {
     properties: Record<string, ToolParameter>;
     required?: string[];
   };
-  timeout?: number; // Optional timeout in milliseconds
-  handler: (args: Record<string, any>) => Promise<any> | any;
+  timeout?: number;
+  handler: (args: Record<string, any>) => any;
 };
 
-type ToolParameter = {
+interface ToolParameter {
   type: string;
   description?: string;
-};
+}
 ```
-CopilotAPI Type
-```tsx
+
+### CopilotAPI
+```ts
 type CopilotAPI = {
   show: () => void;
   hide: () => void;
@@ -232,51 +201,37 @@ type CopilotAPI = {
   };
 };
 ```
-SafeBotName Type
-```tsx
-type SafeBotName = string | number;
-```
-React Hooks
-  - useCopilot(idOrIndex?: string | number) : Get a Copilot instance
-  - useCopilotTools(idOrIndex?: string | number) : Get tools API for a specific instance
-  - useCopilotUser(idOrIndex?: string | number) : Get users API for a specific instance
+
+### Hooks
+- `useCopilot(idOrIndex?: string | number)` – Get a Copilot instance
+- `useCopilotTool(tool, options)` – Register a tool using a hook
+- `useCopilotUser(user, options)` – Register a user using a hook
 
 ## 🔧 Development
-### Building the Package
 
+### Build
 ```bash
 yarn build
 ```
-Type Checking
+
+### Type Check
 ```bash
 yarn typecheck
 ```
-Linting
 
+### Lint
 ```bash
 yarn lint
 ```
-## 📄 Package Information
+
+## 📦 Package Info
 - **Name**: react-copilot-widget
 - **Version**: 1.0.0
 - **License**: MIT
-- **Keywords**: copilot, sdk, react, chatbot
+- **Keywords**: copilot, sdk, react, chatbot, widget, assistant
 
 ## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+We welcome contributions! Open a pull request or issue.
 
-## ## License
-MIT License - see the LICENSE file for details.
-
-```plaintext
-
-The README has been updated with comprehensive documentation that includes:
-
-✅ Enhanced Features Section** with emojis and detailed descriptions
-✅ Complete Usage Examples** including React hooks usage
-✅ Comprehensive API Reference** with proper TypeScript definitions
-✅ Development Instructions** for building and testing
-✅ Professional Formatting** with clear sections and organization
-✅ Real-world Examples** showing practical implementations
-✅ Hook Documentation** for `useCopilot`, `useCopilotTools`, and `useCopilotUser`
-```
+## 📄 License
+MIT License – see the LICENSE file for details.

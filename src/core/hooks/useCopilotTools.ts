@@ -2,25 +2,28 @@ import { useEffect } from 'react';
 import { useCopilot } from './useCopilot';
 import type { ToolDefinition } from '../../types/CopilotTypes';
 
+interface Options {
+  removeOnUnmount?: boolean;
+  idOrIndex?: string | number;
+}
+
 export const useCopilotTool = (
-  tool: ToolDefinition,
-  options?: { removeOnUnmount?: boolean; idOrIndex?: string | number }
+  toolOrTools: ToolDefinition | ToolDefinition[],
+  options?: Options
 ) => {
   const { addTool, removeTool } = useCopilot(options?.idOrIndex);
 
   useEffect(() => {
-    if (!tool?.name) {
-      console.warn('[useCopilotTool] Tool must have a valid name');
-      return;
-    }
+    const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
 
-    addTool?.(tool);
+    addTool?.(tools);
 
     return () => {
-      if (options?.removeOnUnmount && tool?.name) {
-        removeTool?.(tool.name);
+      if (options?.removeOnUnmount) {
+        tools.forEach(tool => {
+          if (tool?.name) removeTool?.(tool.name);
+        });
       }
     };
-    // Dependencies: only care about tool.name and bot index/name
-  }, [tool.name, addTool, removeTool]);
+  }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount]);
 };

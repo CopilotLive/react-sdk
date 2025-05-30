@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { copilotInstances } from '../CopilotInstanceManager';
-import { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
+import type { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
 
-const MAX_WAIT_TIME = 5000;
+const MAX_WAIT_TIME = 5000; // in ms
 
 export const useCopilot = (idOrIndex?: string | number) => {
   const [copilot, setCopilot] = useState<CopilotAPI>();
@@ -14,10 +14,12 @@ export const useCopilot = (idOrIndex?: string | number) => {
     let tries = 0;
 
     const keys = Array.from(copilotInstances.keys());
-    let key: string | undefined = 
-      idOrIndex === undefined ? keys[0]
-      : typeof idOrIndex === 'number' ? keys[idOrIndex]
-      : idOrIndex;
+    const key =
+      idOrIndex === undefined
+        ? keys[0]
+        : typeof idOrIndex === 'number'
+        ? keys[idOrIndex]
+        : idOrIndex;
 
     const id = setInterval(() => {
       if (key && copilotInstances.has(key)) {
@@ -38,10 +40,17 @@ export const useCopilot = (idOrIndex?: string | number) => {
     }
   }, [hasErrored, idOrIndex]);
 
+  const addTool = (toolOrTools: ToolDefinition | ToolDefinition[]) => {
+    if (!copilot?.tools?.add) return;
+
+    const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
+    tools.forEach(tool => copilot.tools.add(tool));
+  };
+
   return {
     show: () => copilot?.show(),
     hide: () => copilot?.hide(),
-    addTool: (tool: ToolDefinition | ToolDefinition[]) => copilot?.tools?.add(tool),
+    addTool,
     removeTool: (name: string) => copilot?.tools?.remove(name),
     removeAllTools: () => copilot?.tools?.removeAll?.(),
     setUser: (user: Record<string, any>) => copilot?.users?.set(user),

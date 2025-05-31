@@ -58,7 +58,6 @@ const injectCopilotScript = (
   waitForCopilot(safeBotName).then((copilot: CopilotAPI | null) => {
     if (copilot) {
       copilotInstances.set(key, copilot);
-      console.log(`[CopilotProvider] Registered: ${key}`);
     }
   });
 };

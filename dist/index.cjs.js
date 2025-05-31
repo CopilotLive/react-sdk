@@ -82,7 +82,6 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
-            console.log(`[CopilotProvider] Registered: ${key}`);
         }
     });
 };
@@ -154,7 +153,7 @@ const useCopilot = (idOrIndex) => {
 };
 
 const Copilot = ({ tools, botName }) => {
-    const { addTool } = useCopilot(botName);
+    const { addTool, removeAllTools } = useCopilot(botName);
     react.useEffect(() => {
         if (!tools || !addTool) {
             if (!tools) {
@@ -166,8 +165,11 @@ const Copilot = ({ tools, botName }) => {
             return;
         }
         addTool(tools);
-        const count = Array.isArray(tools) ? tools.length : 1;
-        console.log(`[Copilot] Registered ${count} tool(s)`);
+        return () => {
+            if (typeof removeAllTools === 'function') {
+                removeAllTools();
+            }
+        };
     }, [tools, addTool]);
     return null;
 };

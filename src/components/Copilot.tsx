@@ -8,7 +8,7 @@ type Props = {
 };
 
 export const Copilot = ({ tools, botName }: Props) => {
-  const { addTool } = useCopilot(botName);
+  const { addTool, removeAllTools } = useCopilot(botName);
 
   useEffect(() => {
     if (!tools || !addTool) {
@@ -22,8 +22,12 @@ export const Copilot = ({ tools, botName }: Props) => {
     }
 
     addTool(tools);
-    const count = Array.isArray(tools) ? tools.length : 1;
-    console.log(`[Copilot] Registered ${count} tool(s)`);
+    
+    return () => {
+      if (typeof removeAllTools === 'function') {
+        removeAllTools();
+      }
+    };
   }, [tools, addTool]);
 
   return null;

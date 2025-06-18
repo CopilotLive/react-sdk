@@ -75,7 +75,6 @@ export const Copilot = ({ tools, botName }: Props) => {
         ? `${defaultBotName}${botName}`
         : defaultBotName;
 
-    // 🚨 One-time hard reload logic
     const reloadKey = `copilot_hard_reloaded_${instanceKey}`;
     const hasReloaded = sessionStorage.getItem(reloadKey);
 

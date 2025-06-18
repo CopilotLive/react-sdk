@@ -223,21 +223,13 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
 };
 const Copilot = ({ tools, botName }) => {
     const { getInstanceConfig } = useCopilotProvider();
-    const { addTool, removeAllTools } = useCopilot(botName);
+    const { addTool, removeAllTools, destroy } = useCopilot(botName);
     useEffect(() => {
         const instanceKey = typeof botName === 'string'
             ? botName
             : typeof botName === 'number'
                 ? `${defaultBotName}${botName}`
                 : defaultBotName;
-        // 🚨 One-time hard reload logic
-        const reloadKey = `copilot_hard_reloaded_${instanceKey}`;
-        const hasReloaded = sessionStorage.getItem(reloadKey);
-        if (!hasReloaded) {
-            sessionStorage.setItem(reloadKey, 'true');
-            window.location.reload();
-            return;
-        }
         const instanceConfig = getInstanceConfig(botName);
         if (!instanceConfig) {
             console.error(`[Copilot] No configuration found for botName: ${botName}`);
@@ -247,7 +239,7 @@ const Copilot = ({ tools, botName }) => {
         const finalKey = configBotName || instanceKey;
         injectCopilotScript(finalKey, token, config, scriptUrl);
         return () => {
-            sessionStorage.setItem(reloadKey, 'false');
+            destroy();
         };
     }, [botName, getInstanceConfig]);
     useEffect(() => {

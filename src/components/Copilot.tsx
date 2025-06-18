@@ -65,7 +65,7 @@ const injectCopilotScript = (
 
 export const Copilot = ({ tools, botName }: Props) => {
   const { getInstanceConfig } = useCopilotProvider();
-  const { addTool, removeAllTools } = useCopilot(botName);
+  const { addTool, removeAllTools, destroy } = useCopilot(botName);
 
   useEffect(() => {
     const instanceKey =
@@ -74,15 +74,6 @@ export const Copilot = ({ tools, botName }: Props) => {
         : typeof botName === 'number'
         ? `${defaultBotName}${botName}`
         : defaultBotName;
-
-    const reloadKey = `copilot_hard_reloaded_${instanceKey}`;
-    const hasReloaded = sessionStorage.getItem(reloadKey);
-
-    if (!hasReloaded) {
-      sessionStorage.setItem(reloadKey, 'true');
-      window.location.reload();
-      return;
-    }
 
     const instanceConfig = getInstanceConfig(botName);
     if (!instanceConfig) {
@@ -96,7 +87,7 @@ export const Copilot = ({ tools, botName }: Props) => {
     injectCopilotScript(finalKey, token, config, scriptUrl);
 
     return () => {
-      sessionStorage.setItem(reloadKey, 'false');
+      destroy();
     }
 
   }, [botName, getInstanceConfig]);

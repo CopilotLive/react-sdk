@@ -215,7 +215,7 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
 
     });
   `;
-    document.body.appendChild(inlineScript);
+    document.head.appendChild(inlineScript);
     waitForCopilot(safeBotName).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
@@ -224,7 +224,8 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
 };
 const Copilot = ({ tools, botName }) => {
     const { getInstanceConfig } = useCopilotProvider();
-    const { addTool, removeAllTools, destroy } = useCopilot(botName);
+    const { addTool, removeAllTools } = useCopilot(botName);
+    // Handle Copilot instance lifecycle
     react.useEffect(() => {
         const instanceKey = typeof botName === 'string'
             ? botName
@@ -239,27 +240,25 @@ const Copilot = ({ tools, botName }) => {
         const { token, config = {}, scriptUrl, botName: configBotName } = instanceConfig;
         const finalKey = configBotName || instanceKey;
         const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+        // Only inject script if instance doesn't exist
         if (!copilotInstances.has(finalKey) && !document.getElementById(scriptId)) {
             injectCopilotScript(finalKey, token, config, scriptUrl);
         }
+        // Cleanup function
         return () => {
-            if (window[`_${finalKey}_ready`]) {
-                window[finalKey]?.("destroy");
-                window[`${finalKey}`] = null;
-                window[`_${finalKey}_ready`] = false;
-                const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+            const windowAny = window;
+            if (windowAny[`_${finalKey}_ready`]) {
+                windowAny[finalKey]?.("destroy");
+                windowAny[finalKey] = null;
+                windowAny[`_${finalKey}_ready`] = false;
                 copilotInstances.delete(finalKey);
-                const scriptElement = document.getElementById(scriptId);
-                if (scriptElement) {
-                    document.body.removeChild(scriptElement);
-                }
+                document.getElementById(scriptId)?.remove();
             }
         };
     }, [botName, getInstanceConfig]);
+    // Handle tools management
     react.useEffect(() => {
-        if (!tools || !addTool)
-            return;
-        if (hasHookTools(botName))
+        if (!tools || !addTool || hasHookTools(botName))
             return;
         addTool(tools);
         return () => {

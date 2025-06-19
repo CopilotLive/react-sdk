@@ -1,4 +1,5 @@
 import type { CopilotAPI } from '../types/CopilotTypes';
+import { copilotInstances } from '../core/CopilotInstanceManager';
 
 export const waitForCopilot = (
   botName: string,
@@ -11,6 +12,25 @@ export const waitForCopilot = (
     let tries = 0;
     const maxTries = Math.ceil(timeout / interval);
 
+    const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `-${botName}`}`;
+
+    const cleanup = () => {
+      const windowAny = window as any;
+        if(windowAny[`_${botName}_ready`]) {
+          windowAny[botName]?.("destroy");
+          windowAny[botName] = null;
+          windowAny[`_${botName}_ready`] = false;
+          copilotInstances.delete(botName);
+          
+          const element = document.getElementById(scriptId);
+          const elementObjet = document.getElementById(botName);
+          if (element) {
+            element.remove();
+            elementObjet?.remove();
+          }
+        }
+    }
+
     const check = () => {
       const copilotFn = (window as any)[botName];
       const isReady = (window as any)[`_${botName}_ready`];
@@ -18,7 +38,8 @@ export const waitForCopilot = (
       const hasRealAPI =
         typeof copilotFn === 'function' &&
         typeof copilotFn.tools?.add === 'function' &&
-        typeof copilotFn.users?.set === 'function';
+        typeof copilotFn.users?.set === 'function' &&
+        typeof copilotFn.context?.set === 'function';
 
       if (isReady && hasRealAPI) {
         const copilotAPI: CopilotAPI = {
@@ -33,6 +54,11 @@ export const waitForCopilot = (
             set: (user) => copilotFn.users.set(user),
             unset: () => copilotFn.users.unset(),
           },
+          context: {
+            set: (context) => copilotFn.context.set(context),
+            unset: () => copilotFn.context.unset(),
+          },
+          destroy: () => cleanup(),
         };
 
         return resolve(copilotAPI);

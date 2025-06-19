@@ -1,4 +1,4 @@
-   export const defaultBotName = 'copilot'; 
+export const defaultBotName = 'copilot'; 
    export type ToolParameter = {
     type: string;
     description?: string;
@@ -19,6 +19,7 @@
   export type CopilotAPI = {
     show: () => void;
     hide: () => void;
+    destroy: () => void;
     tools: {
       add: (tool: ToolDefinition | ToolDefinition[]) => void;
       remove: (name: string) => void;
@@ -26,6 +27,10 @@
     };
     users: {
       set: (user: Record<string, any>) => void;
+      unset: () => void;
+    };
+    context: {
+      set: (context: Record<string, any>) => void;
       unset: () => void;
     };
   };

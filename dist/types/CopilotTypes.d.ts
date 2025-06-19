@@ -17,6 +17,7 @@ export type ToolDefinition = {
 export type CopilotAPI = {
     show: () => void;
     hide: () => void;
+    destroy: () => void;
     tools: {
         add: (tool: ToolDefinition | ToolDefinition[]) => void;
         remove: (name: string) => void;
@@ -24,6 +25,10 @@ export type CopilotAPI = {
     };
     users: {
         set: (user: Record<string, any>) => void;
+        unset: () => void;
+    };
+    context: {
+        set: (context: Record<string, any>) => void;
         unset: () => void;
     };
 };

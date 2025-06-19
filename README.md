@@ -1,23 +1,24 @@
 # React Copilot Widget
 
-A React component library for integrating the Copilot chat widget into your applications. This library provides a flexible and type-safe way to manage single or multiple Copilot instances with custom tools and user configurations.
+A React component library for integrating the Copilot chat widget into your applications. This library provides a flexible and type-safe way to manage single or multiple Copilot instances with custom tools, user configurations, and full telemetry observability.
 
 ## ✨ Features
 
 - 🔄 **Automatic Single/Multi Mode**: Automatically detects and supports both single and multiple Copilot instances.
 - 🛠 **Custom Tools Integration**: Register powerful tools with support for async handlers.
 - 👥 **User Management**: Easily set/unset user information across sessions.
-- 🪝 **Ergonomic Hooks**: Intuitive and declarative hooks to register tools and users via `useCopilotTool` and `useCopilotUser`.
+- 🪝 **Ergonomic Hooks**: Intuitive and declarative hooks to register tools, context, eventLoggers, and users via `useCopilotTool`, `useCopilotContext`, `useTelemetry`, and `useCopilotUser`.
 - 🧠 **Smart Resolution**: Access Copilot instance by `name` or `index`, with graceful fallback and validation.
 - ⚡ **Type-Safe**: Built in TypeScript with full type support and validation helpers.
 - 🔌 **Simple Integration**: Drop-in provider and hook system for seamless integration.
+- 📊 **Telemetry Observability**: Full telemetry event tracking with fallback handling, throttling, and section-level filtering.
 
 ## 📦 Installation
 
 ```bash
-npm install react-copilot-widget
+npm install @copilotlive/react-sdk
 # or
-yarn add react-copilot-widget
+yarn add @copilotlive/react-sdk
 ```
 
 ## 🚀 Usage
@@ -25,7 +26,7 @@ yarn add react-copilot-widget
 ### Basic Setup (Single Instance)
 
 ```tsx
-import { CopilotProvider } from 'react-copilot-widget';
+import { CopilotProvider } from '@copilotlive/react-sdk';
 
 function App() {
   return (
@@ -39,10 +40,32 @@ function App() {
 }
 ```
 
+### Telemetry Usage
+
+```tsx
+import { useTelemetry } from '@copilotlive/react-sdk';
+import { TelemetryEvent } from '@copilotlive/react-sdk/types';
+
+// All events
+const all = useTelemetry();
+
+// All 'user:*' events
+const userEvents = useTelemetry(TelemetryEvent.User);
+
+// Specific telemetry
+const widgetClose = useTelemetry(TelemetryEvent.Widget.Close);
+
+// Only unknown/unclassified telemetry
+const unknown = useTelemetry(TelemetryEvent.Other);
+
+// Throttled
+const throttled = useTelemetry(TelemetryEvent.Call.Connect, { throttleDuration: 1000 });
+```
+
 ### Multiple Instances (Auto-detected)
 
 ```tsx
-import { CopilotProvider } from 'react-copilot-widget';
+import { CopilotProvider } from '@copilotlive/react-sdk';
 
 function App() {
   return (
@@ -61,7 +84,7 @@ function App() {
 ### Registering Tools via Component
 
 ```tsx
-import { Copilot, ToolDefinition } from 'react-copilot-widget';
+import { Copilot, ToolDefinition } from '@copilotlive/react-sdk';
 
 const tools: ToolDefinition[] = [
   {
@@ -86,7 +109,7 @@ function ToolsLoader() {
 ### Register Tool via Hook
 
 ```tsx
-import { useCopilotTool } from 'react-copilot-widget';
+import { useCopilotTool } from '@copilotlive/react-sdk';
 
 useCopilotTool({
   name: 'calculate_sum',
@@ -106,7 +129,7 @@ useCopilotTool({
 ### Set/Unset User via Hook
 
 ```tsx
-import { useCopilotUser } from 'react-copilot-widget';
+import { useCopilotUser } from '@copilotlive/react-sdk';
 
 useCopilotUser({
   id: 'user123',
@@ -115,10 +138,33 @@ useCopilotUser({
 }, { unsetOnUnmount: true });
 ```
 
+### Set/Unset Context via Hook
+
+```tsx
+import { useCopilotContext } from '@copilotlive/react-sdk';
+
+useCopilotContext(
+  {
+    description: "Product the user is viewing",
+    store: "product",
+    value: {
+      product_id: "12345",
+      product_name: "Men's Classic T-Shirt",
+      price: 19.99,
+      currency: "USD",
+      in_stock: true,
+    },
+  },
+  {
+    unsetOnUnmount: true,
+  }
+);
+```
+
 ### Controlling Instances
 
 ```tsx
-import { useCopilot } from 'react-copilot-widget';
+import { useCopilot } from '@copilotlive/react-sdk';
 
 function Controls() {
   const copilot = useCopilot(); // Defaults to index 0
@@ -141,94 +187,22 @@ const copilotB = useCopilot(1);
 
 ## 📚 API Reference
 
-### CopilotProvider
-```ts
-// Single Instance
-interface SingleInstance {
-  token: string;
-  config?: Record<string, any>;
-  scriptUrl?: string;
-  botName?: string;
-}
+Includes `CopilotProvider`, `useCopilot`, `useTelemetry`, and all telemetry types.
 
-// Multiple
-interface MultiInstance {
-  instances: SingleInstance[];
-}
-```
-
-### Copilot Component
-```ts
-interface CopilotProps {
-  tools?: ToolDefinition | ToolDefinition[];
-  botName?: string | number;
-}
-```
-
-### ToolDefinition
-```ts
-type ToolDefinition = {
-  name: string;
-  description: string;
-  parameters?: {
-    type: 'object';
-    properties: Record<string, ToolParameter>;
-    required?: string[];
-  };
-  timeout?: number;
-  handler: (args: Record<string, any>) => any;
-};
-
-interface ToolParameter {
-  type: string;
-  description?: string;
-}
-```
-
-### CopilotAPI
-```ts
-type CopilotAPI = {
-  show: () => void;
-  hide: () => void;
-  tools: {
-    add: (tool: ToolDefinition | ToolDefinition[]) => void;
-    remove: (name: string) => void;
-    removeAll?: () => void;
-  };
-  users: {
-    set: (user: Record<string, any>) => void;
-    unset: () => void;
-  };
-};
-```
-
-### Hooks
-- `useCopilot(idOrIndex?: string | number)` – Get a Copilot instance
-- `useCopilotTool(tool, options)` – Register a tool using a hook
-- `useCopilotUser(user, options)` – Register a user using a hook
+Refer to source or documentation for full schemas.
 
 ## 🔧 Development
 
-### Build
 ```bash
 yarn build
-```
-
-### Type Check
-```bash
 yarn typecheck
-```
-
-### Lint
-```bash
 yarn lint
 ```
 
 ## 📦 Package Info
-- **Name**: react-copilot-widget
+- **Name**: @copilotlive/react-sdk
 - **Version**: 1.0.0
 - **License**: MIT
-- **Keywords**: copilot, sdk, react, chatbot, widget, assistant
 
 ## 🤝 Contributing
 We welcome contributions! Open a pull request or issue.

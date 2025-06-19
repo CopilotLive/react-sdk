@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { copilotInstances } from '../CopilotInstanceManager';
 import type { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
 
@@ -50,11 +50,14 @@ export const useCopilot = (idOrIndex?: string | number) => {
   return {
     show: () => copilot?.show(),
     hide: () => copilot?.hide(),
+    destroy: () => copilot?.destroy(),
     addTool,
     removeTool: (name: string) => copilot?.tools?.remove(name),
     removeAllTools: () => copilot?.tools?.removeAll?.(),
     setUser: (user: Record<string, any>) => copilot?.users?.set(user),
     unsetUser: () => copilot?.users?.unset(),
+    setContext: (context: Record<string, any>) => copilot?.context?.set(context),
+    unsetContext: () => copilot?.context?.unset(),
     raw: copilot,
   };
 };

@@ -181,8 +181,10 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
 const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
     const safeBotName = validateBotName(key);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
-    if (document.getElementById(scriptId))
+    if (document.getElementById(scriptId)) {
+        document.getElementById(scriptId)?.remove();
         return;
+    }
     const inlineScript = document.createElement('script');
     inlineScript.id = scriptId;
     inlineScript.type = 'application/javascript';
@@ -239,7 +241,11 @@ const Copilot = ({ tools, botName }) => {
         const finalKey = configBotName || instanceKey;
         injectCopilotScript(finalKey, token, config, scriptUrl);
         return () => {
-            destroy();
+            if (window[`_${finalKey}_ready`]) {
+                window[finalKey]?.("destroy");
+                window[`${finalKey}`] = null;
+                window[`_${finalKey}_ready`] = null;
+            }
         };
     }, [botName, getInstanceConfig]);
     useEffect(() => {

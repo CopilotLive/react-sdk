@@ -20,7 +20,10 @@ const injectCopilotScript = (
 ) => {
   const safeBotName = validateBotName(key);
   const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
-  if (document.getElementById(scriptId)) return;
+  if (document.getElementById(scriptId)){
+    document.getElementById(scriptId)?.remove();
+    return;
+  }
 
   const inlineScript = document.createElement('script');
   inlineScript.id = scriptId;
@@ -87,7 +90,11 @@ export const Copilot = ({ tools, botName }: Props) => {
     injectCopilotScript(finalKey, token, config, scriptUrl);
 
     return () => {
-      destroy();
+      if((window as any)[`_${finalKey}_ready`]){
+        (window as any)[finalKey]?.("destroy");
+        (window as any)[`${finalKey}`] = null;
+        (window as any)[`_${finalKey}_ready`] = null;
+      }
     }
 
   }, [botName, getInstanceConfig]);

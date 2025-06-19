@@ -140,6 +140,22 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
             return resolve(null);
         let tries = 0;
         const maxTries = Math.ceil(timeout / interval);
+        const scriptId = `copilot-loader-script${botName === 'copilot' ? '' : `-${botName}`}`;
+        const cleanup = () => {
+            const windowAny = window;
+            if (windowAny[`_${botName}_ready`]) {
+                windowAny[botName]?.("destroy");
+                windowAny[botName] = null;
+                windowAny[`_${botName}_ready`] = false;
+                copilotInstances.delete(botName);
+                const element = document.getElementById(scriptId);
+                const elementObjet = document.getElementById(botName);
+                if (element) {
+                    element.remove();
+                    elementObjet?.remove();
+                }
+            }
+        };
         const check = () => {
             const copilotFn = window[botName];
             const isReady = window[`_${botName}_ready`];
@@ -164,7 +180,7 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
                         set: (context) => copilotFn.context.set(context),
                         unset: () => copilotFn.context.unset(),
                     },
-                    destroy: () => copilotFn('destroy')
+                    destroy: () => cleanup(),
                 };
                 return resolve(copilotAPI);
             }

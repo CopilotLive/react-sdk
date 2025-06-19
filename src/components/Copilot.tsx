@@ -20,10 +20,7 @@ const injectCopilotScript = (
 ) => {
   const safeBotName = validateBotName(key);
   const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
-  if (document.getElementById(scriptId)){
-    document.getElementById(scriptId)?.remove();
-    return;
-  }
+  //if (document.getElementById(scriptId)) return;
 
   const inlineScript = document.createElement('script');
   inlineScript.id = scriptId;
@@ -87,13 +84,22 @@ export const Copilot = ({ tools, botName }: Props) => {
     const { token, config = {}, scriptUrl, botName: configBotName } = instanceConfig;
     const finalKey = configBotName || instanceKey;
 
-    injectCopilotScript(finalKey, token, config, scriptUrl);
+    const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+    if (!copilotInstances.has(finalKey) && !document.getElementById(scriptId)) {
+      injectCopilotScript(finalKey, token, config, scriptUrl);
+    }
 
     return () => {
       if((window as any)[`_${finalKey}_ready`]){
         (window as any)[finalKey]?.("destroy");
         (window as any)[`${finalKey}`] = null;
-        (window as any)[`_${finalKey}_ready`] = null;
+        (window as any)[`_${finalKey}_ready`] = false;
+        const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+        copilotInstances.delete(finalKey);
+        const scriptElement = document.getElementById(scriptId);
+        if (scriptElement) {
+          document.body.removeChild(scriptElement);
+        }
       }
     }
 

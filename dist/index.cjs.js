@@ -183,10 +183,7 @@ const waitForCopilot = (botName, timeout = 5000, interval = 100) => {
 const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
     const safeBotName = validateBotName(key);
     const scriptId = `copilot-loader-script${safeBotName === 'copilot' ? '' : `-${safeBotName}`}`;
-    if (document.getElementById(scriptId)) {
-        document.getElementById(scriptId)?.remove();
-        return;
-    }
+    //if (document.getElementById(scriptId)) return;
     const inlineScript = document.createElement('script');
     inlineScript.id = scriptId;
     inlineScript.type = 'application/javascript';
@@ -241,12 +238,21 @@ const Copilot = ({ tools, botName }) => {
         }
         const { token, config = {}, scriptUrl, botName: configBotName } = instanceConfig;
         const finalKey = configBotName || instanceKey;
-        injectCopilotScript(finalKey, token, config, scriptUrl);
+        const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+        if (!copilotInstances.has(finalKey) && !document.getElementById(scriptId)) {
+            injectCopilotScript(finalKey, token, config, scriptUrl);
+        }
         return () => {
             if (window[`_${finalKey}_ready`]) {
                 window[finalKey]?.("destroy");
                 window[`${finalKey}`] = null;
-                window[`_${finalKey}_ready`] = null;
+                window[`_${finalKey}_ready`] = false;
+                const scriptId = `copilot-loader-script${finalKey === 'copilot' ? '' : `-${finalKey}`}`;
+                copilotInstances.delete(finalKey);
+                const scriptElement = document.getElementById(scriptId);
+                if (scriptElement) {
+                    document.body.removeChild(scriptElement);
+                }
             }
         };
     }, [botName, getInstanceConfig]);

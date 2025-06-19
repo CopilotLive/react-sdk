@@ -99,7 +99,12 @@ export const Copilot = ({ tools, botName }: Props) => {
         windowAny[`_${finalKey}_ready`] = false;
         copilotInstances.delete(finalKey);
         
-        document.getElementById(scriptId)?.remove();
+        const element = document.getElementById(scriptId);
+        const elementObjet = document.getElementById(finalKey);
+        if (element) {
+          element.remove();
+          elementObjet?.remove();
+        }
       }
     };
   }, [botName, getInstanceConfig]);

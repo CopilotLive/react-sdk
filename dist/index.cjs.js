@@ -225,6 +225,21 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
 const Copilot = ({ tools, botName }) => {
     const { getInstanceConfig } = useCopilotProvider();
     const { addTool, removeAllTools } = useCopilot(botName);
+    const cleanup = (finalKey, scriptId) => {
+        const windowAny = window;
+        if (windowAny[`_${finalKey}_ready`]) {
+            windowAny[finalKey]?.("destroy");
+            windowAny[finalKey] = null;
+            windowAny[`_${finalKey}_ready`] = false;
+            copilotInstances.delete(finalKey);
+            const element = document.getElementById(scriptId);
+            const elementObjet = document.getElementById(finalKey);
+            if (element) {
+                element.remove();
+                elementObjet?.remove();
+            }
+        }
+    };
     // Handle Copilot instance lifecycle
     react.useEffect(() => {
         const instanceKey = typeof botName === 'string'
@@ -246,18 +261,8 @@ const Copilot = ({ tools, botName }) => {
         }
         // Cleanup function
         return () => {
-            const windowAny = window;
-            if (windowAny[`_${finalKey}_ready`]) {
-                windowAny[finalKey]?.("destroy");
-                windowAny[finalKey] = null;
-                windowAny[`_${finalKey}_ready`] = false;
-                copilotInstances.delete(finalKey);
-                const element = document.getElementById(scriptId);
-                const elementObjet = document.getElementById(finalKey);
-                if (element) {
-                    element.remove();
-                    elementObjet?.remove();
-                }
+            if (config?.element) {
+                cleanup(finalKey, scriptId);
             }
         };
     }, [botName, getInstanceConfig]);

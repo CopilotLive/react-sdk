@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { copilotInstances, setPersistentUser, setPersistentContext, addPersistentTool, clearPersistentUser, clearPersistentContext, removePersistentTool } from '../CopilotInstanceManager';
 import type { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
-import { defaultBotName } from '../../types/CopilotTypes';
 
 const MAX_WAIT_TIME = 5000; // in ms
 

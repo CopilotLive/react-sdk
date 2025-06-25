@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useCopilot } from './useCopilot';
 import { setPersistentUser, clearPersistentUser } from '../CopilotInstanceManager';
-import { defaultBotName } from '../../types/CopilotTypes';
 
 interface Options {
   unsetOnUnmount?: boolean;

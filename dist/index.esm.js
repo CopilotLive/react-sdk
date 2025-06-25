@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { jsx } from 'react/jsx-runtime';
 import { Subject } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
@@ -29,6 +29,13 @@ const removePersistentTool = (instanceKey, toolName) => {
     const data = persistentHookData.get(instanceKey);
     if (data?.tools) {
         data.tools = data.tools.filter(t => t.name !== toolName);
+        persistentHookData.set(instanceKey, data);
+    }
+};
+const clearPersistentTools = (instanceKey) => {
+    const data = persistentHookData.get(instanceKey);
+    if (data) {
+        data.tools = [];
         persistentHookData.set(instanceKey, data);
     }
 };
@@ -211,34 +218,56 @@ const defaultBotName = 'copilot';
 const instancesWithHookTools = new Set();
 const useCopilotTool = (toolOrTools, options) => {
     const { addTool, removeTool, getInstanceKey } = useCopilot(options?.idOrIndex);
+    const registeredToolsRef = useRef(new Set());
     useEffect(() => {
         const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
         const instanceKey = getInstanceKey();
+        // Filter out already registered tools
+        const newTools = tools.filter((tool) => {
+            const toolKey = `${instanceKey}-${tool.name}`;
+            return !registeredToolsRef.current.has(toolKey);
+        });
+        if (newTools.length === 0) {
+            // All tools are already registered, skip
+            return;
+        }
         if (instanceKey) {
             // Track this instance as having tools from hook
             instancesWithHookTools.add(instanceKey);
             // Persist tools data
-            tools.forEach(tool => {
+            newTools.forEach((tool) => {
+                const toolKey = `${instanceKey}-${tool.name}`;
+                registeredToolsRef.current.add(toolKey);
                 addPersistentTool(instanceKey, tool);
             });
         }
-        addTool?.(tools);
+        addTool?.(newTools);
         return () => {
-            if (options?.removeOnUnmount && instanceKey) {
-                tools.forEach(tool => {
-                    if (tool?.name) {
-                        removeTool?.(tool.name);
-                        removePersistentTool(instanceKey, tool.name);
-                    }
-                });
-                // Remove from tracking when unmounting and no tools left
-                const hasRemainingTools = tools.length === 0;
-                if (hasRemainingTools) {
+            if (instanceKey) {
+                if (options?.clearAllOnUnmount) {
+                    // Clear all persistent tools for this instance
+                    clearPersistentTools(instanceKey);
+                    registeredToolsRef.current.clear();
                     instancesWithHookTools.delete(instanceKey);
+                }
+                else if (options?.removeOnUnmount) {
+                    // Remove only the tools registered in this hook call
+                    newTools.forEach((tool) => {
+                        if (tool?.name) {
+                            const toolKey = `${instanceKey}-${tool.name}`;
+                            registeredToolsRef.current.delete(toolKey);
+                            removeTool?.(tool.name);
+                            removePersistentTool(instanceKey, tool.name);
+                        }
+                    });
+                    // Remove from tracking when unmounting and no tools left
+                    if (registeredToolsRef.current.size === 0) {
+                        instancesWithHookTools.delete(instanceKey);
+                    }
                 }
             }
         };
-    }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount, getInstanceKey]);
+    }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount, options?.clearAllOnUnmount, getInstanceKey]);
 };
 // Export function to check if instance has tools from hook
 const hasHookTools = (idOrIndex) => {

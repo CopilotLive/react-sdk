@@ -84,6 +84,7 @@ declare const useCopilot: (idOrIndex?: string | number) => {
 interface Options$2 {
     removeOnUnmount?: boolean;
     idOrIndex?: string | number;
+    clearAllOnUnmount?: boolean;
 }
 declare const useCopilotTool: (toolOrTools: ToolDefinition | ToolDefinition[], options?: Options$2) => void;
 declare const hasHookTools: (idOrIndex?: string | number) => boolean;

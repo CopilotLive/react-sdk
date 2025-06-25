@@ -2,6 +2,7 @@ import type { ToolDefinition } from '../../types/CopilotTypes';
 interface Options {
     removeOnUnmount?: boolean;
     idOrIndex?: string | number;
+    clearAllOnUnmount?: boolean;
 }
 export declare const useCopilotTool: (toolOrTools: ToolDefinition | ToolDefinition[], options?: Options) => void;
 export declare const hasHookTools: (idOrIndex?: string | number) => boolean;

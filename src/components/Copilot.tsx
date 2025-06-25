@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useCopilot } from '../core/hooks/useCopilot';
 import { useCopilotProvider } from './CopilotProvider';
 import { hasHookTools } from '../core/hooks/useCopilotTools';
 import { validateBotName } from '../utills/validateBotName';
 import { waitForCopilot } from '../core/waitForCopilot';
-import { copilotInstances } from '../core/CopilotInstanceManager';
+import { copilotInstances, restorePersistentData } from '../core/CopilotInstanceManager';
 import { defaultBotName, type ToolDefinition, type CopilotAPI } from '../types/CopilotTypes';
 
 type Props = {
@@ -56,9 +56,11 @@ const injectCopilotScript = (
 
   document.head.appendChild(inlineScript);
 
-  waitForCopilot(safeBotName).then((copilot: CopilotAPI | null) => {
+  waitForCopilot(safeBotName, 5000).then((copilot: CopilotAPI | null) => {
     if (copilot) {
       copilotInstances.set(key, copilot);
+      // Restore persistent data after the widget is ready
+      restorePersistentData(key, copilot);
     }
   });
 };

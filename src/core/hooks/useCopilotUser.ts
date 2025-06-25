@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useCopilot } from './useCopilot';
+import { setPersistentUser, clearPersistentUser } from '../CopilotInstanceManager';
+import { defaultBotName } from '../../types/CopilotTypes';
 
 interface Options {
   unsetOnUnmount?: boolean;
@@ -10,15 +12,22 @@ export const useCopilotUser = (
   user: Record<string, any>,
   options?: Options
 ) => {
-  const { setUser, unsetUser } = useCopilot(options?.idOrIndex);
+  const { setUser, unsetUser, getInstanceKey } = useCopilot(options?.idOrIndex);
 
   useEffect(() => {
+    const instanceKey = getInstanceKey();
+    if (instanceKey) {
+      // Persist user data
+      setPersistentUser(instanceKey, user);
+    }
+    
     setUser?.(user);
 
     return () => {
-      if (options?.unsetOnUnmount) {
+      if (options?.unsetOnUnmount && instanceKey) {
+        clearPersistentUser(instanceKey);
         unsetUser?.();
       }
     };
-  }, [setUser, unsetUser, user, options?.unsetOnUnmount]);
+  }, [setUser, unsetUser, user, options?.unsetOnUnmount, getInstanceKey]);
 };

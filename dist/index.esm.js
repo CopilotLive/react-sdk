@@ -1,14 +1,84 @@
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useRef } from 'react';
 import { jsx } from 'react/jsx-runtime';
 import { Subject } from 'rxjs';
 import { throttleTime, filter } from 'rxjs/operators';
 
 const copilotInstances = new Map();
+const persistentHookData = new Map();
+// Helper functions to manage persistent data
+const setPersistentUser = (instanceKey, user) => {
+    const data = persistentHookData.get(instanceKey) || {};
+    data.user = user;
+    persistentHookData.set(instanceKey, data);
+};
+const setPersistentContext = (instanceKey, context) => {
+    const data = persistentHookData.get(instanceKey) || {};
+    data.context = context;
+    persistentHookData.set(instanceKey, data);
+};
+const addPersistentTool = (instanceKey, tool) => {
+    const data = persistentHookData.get(instanceKey) || {};
+    if (!data.tools)
+        data.tools = [];
+    // Remove existing tool with same name, then add new one
+    data.tools = data.tools.filter(t => t.name !== tool.name);
+    data.tools.push(tool);
+    persistentHookData.set(instanceKey, data);
+};
+const removePersistentTool = (instanceKey, toolName) => {
+    const data = persistentHookData.get(instanceKey);
+    if (data?.tools) {
+        data.tools = data.tools.filter(t => t.name !== toolName);
+        persistentHookData.set(instanceKey, data);
+    }
+};
+const clearPersistentTools = (instanceKey) => {
+    const data = persistentHookData.get(instanceKey);
+    if (data) {
+        data.tools = [];
+        persistentHookData.set(instanceKey, data);
+    }
+};
+const clearPersistentUser = (instanceKey) => {
+    const data = persistentHookData.get(instanceKey);
+    if (data) {
+        delete data.user;
+        persistentHookData.set(instanceKey, data);
+    }
+};
+const clearPersistentContext = (instanceKey) => {
+    const data = persistentHookData.get(instanceKey);
+    if (data) {
+        delete data.context;
+        persistentHookData.set(instanceKey, data);
+    }
+};
+// Restore persistent data to a copilot instance
+const restorePersistentData = (instanceKey, copilot) => {
+    const data = persistentHookData.get(instanceKey);
+    if (!data)
+        return;
+    // Restore user if exists
+    if (data.user) {
+        copilot.users?.set(data.user);
+    }
+    // Restore context if exists
+    if (data.context) {
+        copilot.context?.set(data.context);
+    }
+    // Restore tools if exists
+    if (data.tools && data.tools.length > 0) {
+        data.tools.forEach(tool => {
+            copilot.tools?.add(tool);
+        });
+    }
+};
 
 const MAX_WAIT_TIME = 5000; // in ms
 const useCopilot = (idOrIndex) => {
     const [copilot, setCopilot] = useState();
     const [hasErrored, setHasErrored] = useState(false);
+    const [currentInstanceKey, setCurrentInstanceKey] = useState('');
     useEffect(() => {
         const interval = 100;
         const maxTries = MAX_WAIT_TIME / interval;
@@ -22,6 +92,7 @@ const useCopilot = (idOrIndex) => {
                     : idOrIndex;
             if (key && copilotInstances.has(key)) {
                 setCopilot(copilotInstances.get(key));
+                setCurrentInstanceKey(key);
                 clearInterval(id);
             }
             else if (++tries >= maxTries) {
@@ -36,23 +107,68 @@ const useCopilot = (idOrIndex) => {
             console.error(`[useCopilot] Copilot "${String(idOrIndex ?? '0')}" not found`);
         }
     }, [hasErrored, idOrIndex]);
+    const getInstanceKey = useCallback(() => {
+        return currentInstanceKey;
+    }, [currentInstanceKey]);
     const addTool = (toolOrTools) => {
         if (!copilot?.tools?.add)
             return;
         const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
-        tools.forEach(tool => copilot.tools.add(tool));
+        tools.forEach(tool => {
+            copilot.tools.add(tool);
+            // Persist tool data
+            if (currentInstanceKey) {
+                addPersistentTool(currentInstanceKey, tool);
+            }
+        });
+    };
+    const setUser = (user) => {
+        copilot?.users?.set(user);
+        // Persist user data
+        if (currentInstanceKey) {
+            setPersistentUser(currentInstanceKey, user);
+        }
+    };
+    const unsetUser = () => {
+        copilot?.users?.unset();
+        // Clear persistent user data
+        if (currentInstanceKey) {
+            clearPersistentUser(currentInstanceKey);
+        }
+    };
+    const setContext = (context) => {
+        copilot?.context?.set(context);
+        // Persist context data
+        if (currentInstanceKey) {
+            setPersistentContext(currentInstanceKey, context);
+        }
+    };
+    const unsetContext = () => {
+        copilot?.context?.unset();
+        // Clear persistent context data
+        if (currentInstanceKey) {
+            clearPersistentContext(currentInstanceKey);
+        }
+    };
+    const removeTool = (name) => {
+        copilot?.tools?.remove(name);
+        // Remove from persistent data
+        if (currentInstanceKey) {
+            removePersistentTool(currentInstanceKey, name);
+        }
     };
     return {
         show: () => copilot?.show(),
         hide: () => copilot?.hide(),
         destroy: () => copilot?.destroy(),
         addTool,
-        removeTool: (name) => copilot?.tools?.remove(name),
+        removeTool,
         removeAllTools: () => copilot?.tools?.removeAll?.(),
-        setUser: (user) => copilot?.users?.set(user),
-        unsetUser: () => copilot?.users?.unset(),
-        setContext: (context) => copilot?.context?.set(context),
-        unsetContext: () => copilot?.context?.unset(),
+        setUser,
+        unsetUser,
+        setContext,
+        unsetContext,
+        getInstanceKey,
         raw: copilot,
     };
 };
@@ -101,28 +217,65 @@ const defaultBotName = 'copilot';
 // Track which instances have tools added via useCopilotTool
 const instancesWithHookTools = new Set();
 const useCopilotTool = (toolOrTools, options) => {
-    const { addTool, removeTool } = useCopilot(options?.idOrIndex);
+    const { addTool, removeTool, getInstanceKey } = useCopilot(options?.idOrIndex);
+    const registeredToolsRef = useRef(new Set());
     useEffect(() => {
         const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
-        // Track this instance as having tools from hook
-        const instanceKey = options?.idOrIndex?.toString() || defaultBotName;
-        instancesWithHookTools.add(instanceKey);
-        addTool?.(tools);
+        const instanceKey = getInstanceKey();
+        // Filter out already registered tools
+        const newTools = tools.filter((tool) => {
+            const toolKey = `${instanceKey}-${tool.name}`;
+            return !registeredToolsRef.current.has(toolKey);
+        });
+        if (newTools.length === 0) {
+            // All tools are already registered, skip
+            return;
+        }
+        if (instanceKey) {
+            // Track this instance as having tools from hook
+            instancesWithHookTools.add(instanceKey);
+            // Persist tools data
+            newTools.forEach((tool) => {
+                const toolKey = `${instanceKey}-${tool.name}`;
+                registeredToolsRef.current.add(toolKey);
+                addPersistentTool(instanceKey, tool);
+            });
+        }
+        addTool?.(newTools);
         return () => {
-            if (options?.removeOnUnmount) {
-                tools.forEach(tool => {
-                    if (tool?.name)
-                        removeTool?.(tool.name);
-                });
-                // Remove from tracking when unmounting
-                instancesWithHookTools.delete(instanceKey);
+            if (instanceKey) {
+                if (options?.clearAllOnUnmount) {
+                    // Clear all persistent tools for this instance
+                    clearPersistentTools(instanceKey);
+                    registeredToolsRef.current.clear();
+                    instancesWithHookTools.delete(instanceKey);
+                }
+                else if (options?.removeOnUnmount) {
+                    // Remove only the tools registered in this hook call
+                    newTools.forEach((tool) => {
+                        if (tool?.name) {
+                            const toolKey = `${instanceKey}-${tool.name}`;
+                            registeredToolsRef.current.delete(toolKey);
+                            removeTool?.(tool.name);
+                            removePersistentTool(instanceKey, tool.name);
+                        }
+                    });
+                    // Remove from tracking when unmounting and no tools left
+                    if (registeredToolsRef.current.size === 0) {
+                        instancesWithHookTools.delete(instanceKey);
+                    }
+                }
             }
         };
-    }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount, options?.idOrIndex]);
+    }, [addTool, removeTool, toolOrTools, options?.removeOnUnmount, options?.clearAllOnUnmount, getInstanceKey]);
 };
 // Export function to check if instance has tools from hook
 const hasHookTools = (idOrIndex) => {
-    const instanceKey = idOrIndex?.toString() || defaultBotName;
+    const instanceKey = typeof idOrIndex === 'string'
+        ? idOrIndex
+        : typeof idOrIndex === 'number'
+            ? `${defaultBotName}${idOrIndex}`
+            : defaultBotName;
     return instancesWithHookTools.has(instanceKey);
 };
 
@@ -230,9 +383,11 @@ const injectCopilotScript = (key, token, config = {}, scriptUrl) => {
     });
   `;
     document.head.appendChild(inlineScript);
-    waitForCopilot(safeBotName).then((copilot) => {
+    waitForCopilot(safeBotName, 5000).then((copilot) => {
         if (copilot) {
             copilotInstances.set(key, copilot);
+            // Restore persistent data after the widget is ready
+            restorePersistentData(key, copilot);
         }
     });
 };
@@ -295,15 +450,21 @@ const Copilot = ({ tools, botName }) => {
 };
 
 const useCopilotUser = (user, options) => {
-    const { setUser, unsetUser } = useCopilot(options?.idOrIndex);
+    const { setUser, unsetUser, getInstanceKey } = useCopilot(options?.idOrIndex);
     useEffect(() => {
+        const instanceKey = getInstanceKey();
+        if (instanceKey) {
+            // Persist user data
+            setPersistentUser(instanceKey, user);
+        }
         setUser?.(user);
         return () => {
-            if (options?.unsetOnUnmount) {
+            if (options?.unsetOnUnmount && instanceKey) {
+                clearPersistentUser(instanceKey);
                 unsetUser?.();
             }
         };
-    }, [setUser, unsetUser, user, options?.unsetOnUnmount]);
+    }, [setUser, unsetUser, user, options?.unsetOnUnmount, getInstanceKey]);
 };
 
 // TelemetryEvent.ts
@@ -409,15 +570,21 @@ function useTelemetry(groupOrEvent, options) {
 }
 
 const useCopilotContext = (context, options) => {
-    const { setContext, unsetContext } = useCopilot(options?.idOrIndex);
+    const { setContext, unsetContext, getInstanceKey } = useCopilot(options?.idOrIndex);
     useEffect(() => {
+        const instanceKey = getInstanceKey();
+        if (instanceKey) {
+            // Persist context data
+            setPersistentContext(instanceKey, context);
+        }
         setContext?.(context);
         return () => {
-            if (options?.unsetOnUnmount) {
+            if (options?.unsetOnUnmount && instanceKey) {
+                clearPersistentContext(instanceKey);
                 unsetContext?.();
             }
         };
-    }, [setContext, unsetContext, context, options?.unsetOnUnmount]);
+    }, [setContext, unsetContext, context, options?.unsetOnUnmount, getInstanceKey]);
 };
 
 export { Copilot, CopilotProvider, hasHookTools, telemetryBus, useCopilot, useCopilotContext, useCopilotProvider, useCopilotTool, useCopilotUser, useTelemetry };

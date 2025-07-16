@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useCopilot } from './useCopilot';
 import type { ToolDefinition } from '../../types/CopilotTypes';
 import { defaultBotName } from '../../types/CopilotTypes';
-import { addPersistentTool, removePersistentTool, clearPersistentTools } from '../CopilotInstanceManager';
+import { addPersistentTool, addPersistentTools, removePersistentTool, clearPersistentTools } from '../CopilotInstanceManager';
 
 interface Options {
   removeOnUnmount?: boolean;
@@ -23,7 +23,7 @@ export const useCopilotTool = (
   useEffect(() => {
     const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
     const instanceKey = getInstanceKey();
-    
+
     // Filter out already registered tools
     const newTools = tools.filter((tool: ToolDefinition) => {
       const toolKey = `${instanceKey}-${tool.name}`;
@@ -34,17 +34,23 @@ export const useCopilotTool = (
       // All tools are already registered, skip
       return;
     }
-    
+
     if (instanceKey) {
       // Track this instance as having tools from hook
       instancesWithHookTools.add(instanceKey);
-      
-      // Persist tools data
+
+      // Track registered tools efficiently (batch operation)
       newTools.forEach((tool: ToolDefinition) => {
         const toolKey = `${instanceKey}-${tool.name}`;
         registeredToolsRef.current.add(toolKey);
-        addPersistentTool(instanceKey, tool);
       });
+
+      // Use batch persistence for optimal performance
+      if (newTools.length === 1) {
+        addPersistentTool(instanceKey, newTools[0]);
+      } else {
+        addPersistentTools(instanceKey, newTools);
+      }
     }
 
     addTool?.(newTools);
@@ -57,15 +63,21 @@ export const useCopilotTool = (
           registeredToolsRef.current.clear();
           instancesWithHookTools.delete(instanceKey);
         } else if (options?.removeOnUnmount) {
-          // Remove only the tools registered in this hook call
-          newTools.forEach((tool: ToolDefinition) => {
-            if (tool?.name) {
-              const toolKey = `${instanceKey}-${tool.name}`;
-              registeredToolsRef.current.delete(toolKey);
-              removeTool?.(tool.name);
-              removePersistentTool(instanceKey, tool.name);
+          // Remove only the tools registered in this hook call (batch operation)
+          const toolKeysToRemove = newTools.map(tool => `${instanceKey}-${tool.name}`);
+          const toolNamesToRemove = newTools.map(tool => tool.name);
+
+          // Batch remove from tracking
+          toolKeysToRemove.forEach(toolKey => registeredToolsRef.current.delete(toolKey));
+
+          // Batch remove from API (note: removeTool still needs individual calls as the API doesn't support batch removal)
+          toolNamesToRemove.forEach(toolName => {
+            if (toolName) {
+              removeTool?.(toolName);
+              removePersistentTool(instanceKey, toolName);
             }
           });
+
           // Remove from tracking when unmounting and no tools left
           if (registeredToolsRef.current.size === 0) {
             instancesWithHookTools.delete(instanceKey);
@@ -78,8 +90,8 @@ export const useCopilotTool = (
 
 // Export function to check if instance has tools from hook
 export const hasHookTools = (idOrIndex?: string | number): boolean => {
-  const instanceKey = typeof idOrIndex === 'string' 
-    ? idOrIndex 
+  const instanceKey = typeof idOrIndex === 'string'
+    ? idOrIndex
     : typeof idOrIndex === 'number'
       ? `${defaultBotName}${idOrIndex}`
       : defaultBotName;

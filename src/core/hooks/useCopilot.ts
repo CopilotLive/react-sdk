@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { copilotInstances, setPersistentUser, setPersistentContext, addPersistentTool, clearPersistentUser, clearPersistentContext, removePersistentTool } from '../CopilotInstanceManager';
+import { copilotInstances, setPersistentUser, setPersistentContext, addPersistentTool, addPersistentTools, clearPersistentUser, clearPersistentContext, removePersistentTool } from '../CopilotInstanceManager';
 import type { CopilotAPI, ToolDefinition } from '../../types/CopilotTypes';
 
 const MAX_WAIT_TIME = 5000; // in ms
@@ -15,14 +15,14 @@ export const useCopilot = (idOrIndex?: string | number) => {
     let tries = 0;
 
     const id = setInterval(() => {
-    const keys = Array.from(copilotInstances.keys());
-    const key =
-      idOrIndex === undefined
-        ? keys[0]
-        : typeof idOrIndex === 'number'
-        ? keys[idOrIndex]
-        : idOrIndex;
-        
+      const keys = Array.from(copilotInstances.keys());
+      const key =
+        idOrIndex === undefined
+          ? keys[0]
+          : typeof idOrIndex === 'number'
+            ? keys[idOrIndex]
+            : idOrIndex;
+
       if (key && copilotInstances.has(key)) {
         setCopilot(copilotInstances.get(key));
         setCurrentInstanceKey(key);
@@ -47,16 +47,21 @@ export const useCopilot = (idOrIndex?: string | number) => {
   }, [currentInstanceKey]);
 
   const addTool = (toolOrTools: ToolDefinition | ToolDefinition[]) => {
-    if (!copilot?.tools?.add) return;
+    if (copilot) {
+      // Pass tools directly to the underlying API (supports arrays)
+      copilot.tools.add(toolOrTools);
 
-    const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
-    tools.forEach(tool => {
-      copilot.tools.add(tool);
-      // Persist tool data
+      // Persist tool data efficiently
       if (currentInstanceKey) {
-        addPersistentTool(currentInstanceKey, tool);
+        if (Array.isArray(toolOrTools)) {
+          // Use batch persistence for arrays
+          addPersistentTools(currentInstanceKey, toolOrTools);
+        } else {
+          // Use single persistence for individual tools
+          addPersistentTool(currentInstanceKey, toolOrTools);
+        }
       }
-    });
+    }
   };
 
   const setUser = (user: Record<string, any>) => {

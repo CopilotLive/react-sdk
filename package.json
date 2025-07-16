@@ -19,6 +19,13 @@
     "lint": "eslint . --ext .ts,.tsx",
     "typecheck": "tsc --noEmit"
   },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CopilotLive/react-sdk.git"
+  },
   "keywords": [
     "copilot",
     "sdk",

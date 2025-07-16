@@ -25,6 +25,19 @@ const addPersistentTool = (instanceKey, tool) => {
     data.tools.push(tool);
     persistentHookData.set(instanceKey, data);
 };
+// Batch version for adding multiple tools efficiently
+const addPersistentTools = (instanceKey, tools) => {
+    const data = persistentHookData.get(instanceKey) || {};
+    if (!data.tools)
+        data.tools = [];
+    // Extract tool names for efficient filtering
+    const newToolNames = new Set(tools.map(tool => tool.name));
+    // Remove existing tools with same names in one operation
+    data.tools = data.tools.filter(t => !newToolNames.has(t.name));
+    // Add all new tools at once
+    data.tools.push(...tools);
+    persistentHookData.set(instanceKey, data);
+};
 const removePersistentTool = (instanceKey, toolName) => {
     const data = persistentHookData.get(instanceKey);
     if (data?.tools) {
@@ -66,11 +79,9 @@ const restorePersistentData = (instanceKey, copilot) => {
     if (data.context) {
         copilot.context?.set(data.context);
     }
-    // Restore tools if exists
+    // Restore all tools at once (batch operation)
     if (data.tools && data.tools.length > 0) {
-        data.tools.forEach(tool => {
-            copilot.tools?.add(tool);
-        });
+        copilot.tools?.add(data.tools);
     }
 };
 
@@ -111,16 +122,21 @@ const useCopilot = (idOrIndex) => {
         return currentInstanceKey;
     }, [currentInstanceKey]);
     const addTool = (toolOrTools) => {
-        if (!copilot?.tools?.add)
-            return;
-        const tools = Array.isArray(toolOrTools) ? toolOrTools : [toolOrTools];
-        tools.forEach(tool => {
-            copilot.tools.add(tool);
-            // Persist tool data
+        if (copilot) {
+            // Pass tools directly to the underlying API (supports arrays)
+            copilot.tools.add(toolOrTools);
+            // Persist tool data efficiently
             if (currentInstanceKey) {
-                addPersistentTool(currentInstanceKey, tool);
+                if (Array.isArray(toolOrTools)) {
+                    // Use batch persistence for arrays
+                    addPersistentTools(currentInstanceKey, toolOrTools);
+                }
+                else {
+                    // Use single persistence for individual tools
+                    addPersistentTool(currentInstanceKey, toolOrTools);
+                }
             }
-        });
+        }
     };
     const setUser = (user) => {
         copilot?.users?.set(user);
@@ -234,12 +250,18 @@ const useCopilotTool = (toolOrTools, options) => {
         if (instanceKey) {
             // Track this instance as having tools from hook
             instancesWithHookTools.add(instanceKey);
-            // Persist tools data
+            // Track registered tools efficiently (batch operation)
             newTools.forEach((tool) => {
                 const toolKey = `${instanceKey}-${tool.name}`;
                 registeredToolsRef.current.add(toolKey);
-                addPersistentTool(instanceKey, tool);
             });
+            // Use batch persistence for optimal performance
+            if (newTools.length === 1) {
+                addPersistentTool(instanceKey, newTools[0]);
+            }
+            else {
+                addPersistentTools(instanceKey, newTools);
+            }
         }
         addTool?.(newTools);
         return () => {
@@ -251,13 +273,16 @@ const useCopilotTool = (toolOrTools, options) => {
                     instancesWithHookTools.delete(instanceKey);
                 }
                 else if (options?.removeOnUnmount) {
-                    // Remove only the tools registered in this hook call
-                    newTools.forEach((tool) => {
-                        if (tool?.name) {
-                            const toolKey = `${instanceKey}-${tool.name}`;
-                            registeredToolsRef.current.delete(toolKey);
-                            removeTool?.(tool.name);
-                            removePersistentTool(instanceKey, tool.name);
+                    // Remove only the tools registered in this hook call (batch operation)
+                    const toolKeysToRemove = newTools.map(tool => `${instanceKey}-${tool.name}`);
+                    const toolNamesToRemove = newTools.map(tool => tool.name);
+                    // Batch remove from tracking
+                    toolKeysToRemove.forEach(toolKey => registeredToolsRef.current.delete(toolKey));
+                    // Batch remove from API (note: removeTool still needs individual calls as the API doesn't support batch removal)
+                    toolNamesToRemove.forEach(toolName => {
+                        if (toolName) {
+                            removeTool?.(toolName);
+                            removePersistentTool(instanceKey, toolName);
                         }
                     });
                     // Remove from tracking when unmounting and no tools left

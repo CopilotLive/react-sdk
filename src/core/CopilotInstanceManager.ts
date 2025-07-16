@@ -32,6 +32,23 @@ export const addPersistentTool = (instanceKey: string, tool: ToolDefinition) => 
   persistentHookData.set(instanceKey, data);
 };
 
+// Batch version for adding multiple tools efficiently
+export const addPersistentTools = (instanceKey: string, tools: ToolDefinition[]) => {
+  const data = persistentHookData.get(instanceKey) || {};
+  if (!data.tools) data.tools = [];
+
+  // Extract tool names for efficient filtering
+  const newToolNames = new Set(tools.map(tool => tool.name));
+
+  // Remove existing tools with same names in one operation
+  data.tools = data.tools.filter(t => !newToolNames.has(t.name));
+
+  // Add all new tools at once
+  data.tools.push(...tools);
+
+  persistentHookData.set(instanceKey, data);
+};
+
 export const removePersistentTool = (instanceKey: string, toolName: string) => {
   const data = persistentHookData.get(instanceKey);
   if (data?.tools) {
@@ -83,10 +100,8 @@ export const restorePersistentData = (instanceKey: string, copilot: CopilotAPI) 
     copilot.context?.set(data.context);
   }
 
-  // Restore tools if exists
+  // Restore all tools at once (batch operation)
   if (data.tools && data.tools.length > 0) {
-    data.tools.forEach(tool => {
-      copilot.tools?.add(tool);
-    });
+    copilot.tools?.add(data.tools);
   }
 };
